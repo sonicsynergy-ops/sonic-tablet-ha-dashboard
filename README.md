@@ -356,6 +356,7 @@ hemma_time:
 
 - Original Homio concept and base implementation: [iamtherufus/Homio](https://github.com/iamtherufus/Homio)
 - Original climate/air quality card design: [jerahmeel-sudo](https://github.com/jerahmeel-sudo/Custom-Air-Quality-Card-with-score-trends-and-pollutant-tiles)
+- Big thanks to [SH1FT-W](https://github.com/SH1FT-W) for helping build out the custom pop up cards
 - Hemma customization and ongoing tweaks: [@willsanderson](https://github.com/willsanderson)
 
 #### Enjoying Hemma? Buy me a coffee :v::smiley:
