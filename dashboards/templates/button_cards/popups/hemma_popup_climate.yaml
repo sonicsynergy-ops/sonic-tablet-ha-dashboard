@@ -1,0 +1,904 @@
+# Climate Popup
+hemma_climate_popup:
+  template:
+    - hemma_popup_base
+
+  variables:
+    room_name: null
+    entity_quality: null
+    entity_temp: null
+    entity_humidity: null
+    sensors: null
+
+  tap_action:
+    browser_mod:
+      data:
+        content: |
+          [[[
+            const safeNum = (id) => {
+              if (!id) return null;
+              const s = states[id]?.state;
+              if (!s || s === 'unavailable' || s === 'unknown') return null;
+              const n = parseFloat(s);
+              return isNaN(n) ? null : n;
+            };
+
+            const sensors = Array.isArray(variables.sensors) ? variables.sensors.filter(Boolean) : [];
+            const tempId  = variables.entity_temp;
+            const humidId = variables.entity_humidity;
+            const qualId  = variables.entity_quality || sensors[0] || entity?.entity_id;
+
+            const temp  = safeNum(tempId);
+            const humid = safeNum(humidId);
+
+            const _ck = 'hemma_climate_' + (qualId || 'x');
+            const _ch = [states[tempId]?.state, states[humidId]?.state, states[qualId]?.state, ...sensors.map(s => states[s]?.state)].join('|');
+            window._hc = window._hc || {};
+            if (window._hc[_ck]?.h === _ch) return window._hc[_ck].r;
+
+            const aqStateRaw = qualId ? states[qualId]?.state : null;
+            const aqState    = (aqStateRaw || '').toLowerCase();
+
+            let scoreLabel = 'Unknown';
+            let scoreColor = 'var(--primary-text-color)';
+            let advice     = 'Air quality unavailable';
+            let score      = 3;
+
+            switch (aqState) {
+              case 'excellent':
+                scoreLabel = 'Excellent'; scoreColor = 'var(--hemma-badge-air-quality-excellent-color)';
+                advice = 'Air quality is great'; score = 5; break;
+              case 'good':
+                scoreLabel = 'Good'; scoreColor = 'var(--hemma-badge-air-quality-good-color)';
+                advice = 'Air quality is good'; score = 4; break;
+              case 'moderate': case 'fair':
+                scoreLabel = aqState === 'fair' ? 'Fair' : 'Moderate';
+                scoreColor = 'var(--hemma-badge-air-quality-moderate-color)';
+                advice = 'Air quality is moderate'; score = 3; break;
+              case 'poor':
+                scoreLabel = 'Poor'; scoreColor = 'var(--hemma-badge-air-quality-poor-color)';
+                advice = 'Consider ventilating'; score = 2; break;
+              case 'bad': case 'very bad': case 'very poor':
+                scoreLabel = 'Bad'; scoreColor = 'var(--hemma-badge-air-quality-bad-color)';
+                advice = 'Ventilate now'; score = 1; break;
+            }
+
+            const sensorThresh = (eid) => {
+              const id   = (eid || '').toLowerCase();
+              const unit = states[eid]?.attributes?.unit_of_measurement || '';
+              const dc   = (states[eid]?.attributes?.device_class || '').toLowerCase();
+              const isIndex = id.endsWith('_index') || unit.toLowerCase() === 'index';
+              if (id.includes('pm25') || id.includes('pm2_5') || dc === 'pm25')
+                return { good: 12,   moderate: 35.4, high: 55.4, unit: unit || 'µg/m³' };
+              if (id.includes('pm10') || dc === 'pm10')
+                return { good: 54,   moderate: 154,  high: 254,  unit: unit || 'µg/m³' };
+              if (id.includes('voc') || id.includes('volatile_organic') || dc.includes('volatile_organic'))
+                return isIndex
+                  ? { good: 6,   moderate: 8,   high: 9,   unit: unit || 'index' }
+                  : { good: 100, moderate: 200, high: 300, unit: unit || 'ppb' };
+              if (id.includes('no2') || id.includes('nitrogen_dioxide') || dc === 'nitrogen_dioxide')
+                return isIndex
+                  ? { good: 6,  moderate: 8,   high: 9,   unit: unit || 'index' }
+                  : { good: 53, moderate: 100, high: 360, unit: unit || 'ppb' };
+              if (id.includes('co2') || id.includes('carbon') || dc === 'carbon_dioxide')
+                return { good: 1000, moderate: 1500, high: 2000, unit: unit || 'ppm' };
+              return { good: null, moderate: null, high: null, unit };
+            };
+
+            const activeSensors = sensors.filter(eid => safeNum(eid) != null);
+
+            let aqiNum, aqiDen, aqiRatio;
+
+            if (activeSensors.length > 0) {
+              // Derive everything from the actual sensor data, ignoring entity_quality
+              const sensorLevels = activeSensors.map(eid => {
+                const val  = safeNum(eid);
+                const info = sensorThresh(eid);
+                if (info.good == null) return 0;
+                if (val <= info.good)     return 0; // Good
+                if (val <= info.moderate) return 1; // Moderate
+                if (val <= info.high)     return 2; // Poor
+                return 3;                           // Bad
+              });
+              const worstLevel = Math.max(...sensorLevels);
+              const goodCount  = sensorLevels.filter(l => l === 0).length;
+
+              switch (worstLevel) {
+                case 0:
+                  scoreLabel = 'Excellent'; scoreColor = 'var(--hemma-badge-air-quality-excellent-color)';
+                  advice = 'Air quality is great'; break;
+                case 1:
+                  scoreLabel = 'Moderate'; scoreColor = 'var(--hemma-badge-air-quality-moderate-color)';
+                  advice = 'Air quality is moderate'; break;
+                case 2:
+                  scoreLabel = 'Poor'; scoreColor = 'var(--hemma-badge-air-quality-poor-color)';
+                  advice = 'Consider ventilating'; break;
+                default:
+                  scoreLabel = 'Bad'; scoreColor = 'var(--hemma-badge-air-quality-bad-color)';
+                  advice = 'Ventilate now'; break;
+              }
+
+              // Fine-tune advice for specific elevated readings (thresholds from sensorThresh — scale-aware)
+              activeSensors.forEach(eid => {
+                const id   = eid.toLowerCase();
+                const val  = safeNum(eid);
+                const info = sensorThresh(eid);
+                if (val == null || info.good == null || val <= info.good) return;
+                if (id.includes('pm25') || id.includes('pm2_5'))                   advice = 'Particles elevated';
+                if (id.includes('voc'))                                             advice = 'VOCs detected — Ventilate';
+                if (id.includes('no2') || id.includes('nitrogen_dioxide'))         advice = 'NO₂ detected — Ventilate';
+                if (id.includes('co2') || id.includes('carbon'))
+                  advice = val > info.high ? 'CO₂ high — Open windows' : 'CO₂ elevated — Ventilate';
+              });
+
+              aqiNum   = goodCount;
+              aqiDen   = activeSensors.length;
+              aqiRatio = goodCount / activeSensors.length;
+            } else {
+              // Fallback: use entity_quality categorical score (1–5 scale)
+              aqiNum   = score;
+              aqiDen   = 5;
+              aqiRatio = score / 5;
+            }
+
+            const radius     = 42;
+            const circ       = 2 * Math.PI * radius;
+            const dashOffset = circ - aqiRatio * circ;
+
+            const tempUnit = states[tempId]?.attributes?.unit_of_measurement || '°';
+            const tempStr  = temp  != null ? (tempUnit === '°F' ? Math.round(temp).toString() : temp.toFixed(1)) : '—';
+            const humidStr = humid != null ? humid.toFixed(0) : '—';
+
+            const isFahrenheit = tempUnit === '°F';
+            const graphTempColor =
+              temp == null ? 'var(--hemma-badge-temp-comfortable-color, #67F5A0)' :
+              isFahrenheit ? (
+                temp < 76  ? 'var(--hemma-badge-temp-comfortable-color, #67F5A0)' :
+                temp < 82  ? '#FF9230' :
+                             '#FF453A'
+              ) : (
+                temp < 24  ? 'var(--hemma-badge-temp-comfortable-color, #67F5A0)' :
+                temp < 28  ? '#FF9230' :
+                             '#FF453A'
+              );
+
+            const humidColor =
+              humid == null          ? 'rgba(255,255,255,0.7)' :
+              humid < 20 || humid > 75 ? 'var(--hemma-popup-red-color, #ff453a)'    :
+              humid < 30 || humid > 65 ? 'var(--hemma-popup-orange-color, #ff9230)' :
+              humid < 35 || humid > 60 ? 'var(--hemma-popup-yellow-color, #ffd600)' :
+              'var(--hemma-badge-climate-color, #C7CED6)';
+
+
+            const roomName = variables.room_name || 'Climate';
+
+            /* -------------------------------------------------------
+             * Styles
+             * ------------------------------------------------------- */
+            const noHoverStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: default !important; }
+              ha-card:hover { box-shadow: none !important; border-color: transparent !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const wrapperStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; overflow: visible !important; cursor: default !important; }
+              ha-card:hover { box-shadow: none !important; }
+              #container { overflow: visible !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const contentCardStyle = wrapperStyle + `@media (max-width: 600px) { ha-card { padding-left: 14px !important; padding-right: 14px !important; } }`;
+
+            const tapStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; pointer-events: auto !important; }
+              ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; overflow: visible !important; }
+              ha-card #container { transition: opacity 0.18s ease, filter 0.18s ease !important; }
+              ha-card:hover #container { filter: brightness(1.12) saturate(1.08) drop-shadow(0 0 10px rgba(255,255,255,0.05)); }
+              ha-ripple { display: none !important; }
+            `;
+
+            const tileTapStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }
+              ha-card:hover { background: rgba(255,255,255,0.09) !important; transform: translateY(-1px) !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const graphStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                padding: 0px 0px 10px 0px !important;
+                margin-top: -25px !important;
+                --mgc-legend-alignment: flex-start;
+                --primary-color: transparent !important;
+              }
+              ha-card:hover { box-shadow: none !important; border-color: transparent !important; }
+
+              .graph__legend { display: flex !important; justify-content: flex-start !important; align-items: center !important; margin-left: 6px !important; }
+              .graph__legend__item:nth-child(1) { margin-right: 27px !important; }
+              .graph__legend__item { position: relative !important; display: flex !important; align-items: center !important; min-width: 0 !important; line-height: 1.1 !important; overflow: visible !important; padding-left: 8px !important; margin-bottom: 10px !important; }
+              .graph__legend__item > svg { display: none !important; }
+              .graph__legend__item::before { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; transform: translateY(-50%); border-radius: 4px; flex: 0 0 auto; }
+              .graph__legend__item:nth-child(1)::before { background: ${graphTempColor} !important; }
+              .graph__legend__item:nth-child(2)::before { background: var(--hemma-badge-climate-color, #C7CED6) !important; }
+
+              .graph { position: relative !important; overflow: visible !important; }
+              .graph__container { overflow: visible !important; }
+
+              .graph__container svg {
+                width: calc(100% + 60px) !important;
+                margin-left: -30px !important;
+                display: block !important;
+                overflow: visible !important;
+
+                -webkit-mask-image:
+                  linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.1) 13%, rgba(0,0,0,0.5) 23%, black 35%, black 65%, rgba(0,0,0,0.5) 77%, rgba(0,0,0,0.1) 87%, rgba(0,0,0,0) 93%, rgba(0,0,0,0) 100%),
+                  linear-gradient(to bottom, transparent 0%, black 12%, black 78%, transparent 100%);
+
+                mask-image:
+                  linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.1) 13%, rgba(0,0,0,0.5) 23%, black 35%, black 65%, rgba(0,0,0,0.5) 77%, rgba(0,0,0,0.1) 87%, rgba(0,0,0,0) 93%, rgba(0,0,0,0) 100%),
+                  linear-gradient(to bottom, transparent 0%, black 12%, black 78%, transparent 100%);
+
+                -webkit-mask-composite: destination-in;
+                mask-composite: intersect;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-size: 100% 100%;
+                mask-size: 100% 100%;
+              }
+
+              .graph__line { opacity: 0.95; filter: drop-shadow(0 0 3px rgba(255,255,255,0.06)); }
+              .graph__fill { opacity: 0.36; }
+              .graph.flex { margin-left: 0px !important; margin-right: 0px !important; padding-bottom: 0px !important; }
+              .graph__hover { overflow: visible !important; }
+
+              .graph__labels,
+              .graph__labels--secondary { overflow: visible !important; opacity: 0 !important; transition: opacity 0.15s ease !important; }
+              ha-card:hover .graph__labels,
+              ha-card:hover .graph__labels--secondary { opacity: 1 !important; }
+              .graph__label { font-size: 11px !important; font-weight: 500 !important; }
+              .graph__labels--secondary .graph__label { left: auto !important; right: 0 !important; }
+            `;
+
+            /* -------------------------------------------------------
+             * Badge Pill
+             * ------------------------------------------------------- */
+            const badgePillCard = {
+              type: 'custom:button-card',
+
+              entity: qualId,
+
+              name: scoreLabel,
+
+              tap_action:
+                qualId
+                  ? { action: 'more-info' }
+                  : { action: 'none' },
+
+              show_icon: false,
+              show_name: true,
+              show_label: false,
+              show_state: false,
+
+              card_mod: {
+                style: [
+                  ':host {',
+                  '  --ha-card-box-shadow:none !important;',
+                  '  --button-card-box-shadow:none !important;',
+                  '  --button-card-box-shadow-hover:none !important;',
+                  '}',
+
+                  'ha-card {',
+                  `  background:color-mix(in srgb,${scoreColor} 12%,transparent) !important;`,
+                  `  border:1px solid color-mix(in srgb,${scoreColor} 35%,transparent) !important;`,
+                  '  border-radius:999px !important;',
+                  '  box-shadow:none !important;',
+                  '  backdrop-filter:none !important;',
+                  '  -webkit-backdrop-filter:none !important;',
+                  '  transition:background .2s ease, filter .2s ease !important;',
+                  '}',
+
+                  `ha-card:hover {
+                    background:color-mix(in srgb,${scoreColor} 22%,transparent) !important;
+                    filter:brightness(1.15) saturate(1.08);
+                  }`,
+
+                  'ha-ripple { display:none !important; }',
+                ].join('\n'),
+              },
+
+              styles: {
+                card: [
+                  {
+                    background:`color-mix(in srgb,${scoreColor} 12%,transparent)`,
+                  },
+                  {
+                    border:`1px solid color-mix(in srgb,${scoreColor} 35%,transparent)`,
+                  },
+                  {
+                    borderRadius:'999px',
+                  },
+                  {
+                    boxShadow:'none',
+                  },
+                  {
+                    padding:'8px 13px',
+                  },
+                ],
+
+                name: [
+                  {
+                    fontSize:'15px',
+                  },
+                  {
+                    fontWeight:'500',
+                  },
+                  {
+                    color:scoreColor,
+                  },
+                  {
+                    whiteSpace:'nowrap',
+                  },
+                  {
+                    fontFamily:'var(--primary-font-family,system-ui)',
+                  },
+                ],
+              },
+            };
+
+            /* -------------------------------------------------------
+             * AQI Gauge
+             * ------------------------------------------------------- */
+            const gaugeCard = {
+              type: 'custom:button-card',
+              entity: qualId,
+              tap_action: qualId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: tapStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'end' }] },
+              },
+              custom_fields: {
+                c: '<div style="position:relative;width:120px;height:120px;">'
+                  + `<svg viewBox="0 0 100 100" style="transform:rotate(-90deg);width:100%;height:100%;">`
+                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="7"/>`
+                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="${scoreColor}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${dashOffset.toFixed(2)}"/>`
+                  + '</svg>'
+                  + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">'
+                    + '<div style="position:relative;display:flex;align-items:center;justify-content:center;margin-top:6px;">'
+                      + `<div style="position:absolute;bottom:100%;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.06em;font-weight:500;padding-bottom:2px;">AQI</div>`
+                      + `<div style="font-size:24px;color:${scoreColor};font-weight:600;line-height:1;">${aqiNum}/${aqiDen}</div>`
+                    + '</div>'
+                  + '</div>'
+                  + '</div>',
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Right Column
+             * ------------------------------------------------------- */
+            const rightColCard = {
+              type: 'custom:button-card',
+              entity: qualId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [
+                  { display: 'flex' }, { 'flex-direction': 'column' }, { 'align-items': 'flex-end' }, { gap: '28px' },
+                ],
+                custom_fields: {
+                  pill: [{ flex: '0 0 auto' }],
+                  ring: [{ flex: '0 0 auto' }],
+                },
+              },
+              custom_fields: {
+                pill: { card: badgePillCard },
+                ring: { card: gaugeCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Stat Cards
+             * ------------------------------------------------------- */
+            const tempStatCard = {
+              type: 'custom:button-card',
+              entity: tempId,
+              tap_action: tempId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: tempId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'start' }] },
+              },
+              custom_fields: {
+                c: '<div>'
+                  + `<div style="display:flex;align-items:baseline;gap:3px;padding-right:6px;">`
+                    + `<span style="font-size:26px;font-weight:400;color:#ffffff;">${tempStr}</span>`
+                    + `<span style="font-size:13px;color:rgba(255,255,255,0.7);">${tempUnit}</span>`
+                  + '</div>'
+                  + '<div style="display:flex;align-items:center;gap:6px;margin-top:7px;">'
+                    + `<span style="width:8px;height:8px;background:${graphTempColor};border-radius:50%;display:inline-block;flex-shrink:0;"></span>`
+                    + '<span style="font-size:14px;color:rgba(255,255,255,0.75);">Temp</span>'
+                  + '</div>'
+                + '</div>',
+              },
+            };
+
+            const humidStatCard = {
+              type: 'custom:button-card',
+              entity: humidId,
+              tap_action: humidId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: humidId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'start' }] },
+              },
+              custom_fields: {
+                c: '<div>'
+                  + `<div style="display:flex;align-items:baseline;gap:3px;padding-left:6px;">`
+                    + `<span style="font-size:26px;font-weight:400;color:#ffffff;">${humidStr}</span>`
+                    + `<span style="font-size:13px;color:rgba(255,255,255,0.7);">%</span>`
+                  + '</div>'
+                  + '<div style="display:flex;align-items:center;gap:6px;margin-top:7px;margin-left:6px;">'
+                    + `<span style="width:8px;height:8px;background:${humidColor};border-radius:50%;display:inline-block;flex-shrink:0;transition:background .4s ease;"></span>`
+                    + '<span style="font-size:14px;color:rgba(255,255,255,0.75);">Humidity</span>'
+                  + '</div>'
+                + '</div>',
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Stats Row
+             * ------------------------------------------------------- */
+            const statsRowCard = {
+              type: 'custom:button-card',
+              entity: tempId || qualId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [
+                  { display: 'flex' }, { 'flex-direction': 'row' }, { 'align-items': 'flex-start' },
+                  { 'justify-content': 'flex-start' }, { gap: '0' },
+                ],
+                custom_fields: {
+                  temp_s:  [{ flex: '0 0 auto' }, { order: '1' }],
+                  div:     [{ flex: '0 0 auto' }, { 'align-self': 'stretch' }, { order: '2' }],
+                  humid_s: [{ flex: '0 0 auto' }, { order: '3' }],
+                },
+              },
+              custom_fields: {
+                temp_s:  { card: tempStatCard },
+                div:     '<div style="width:2px;height:100%;background:rgba(255,255,255,0.09);margin:0 12px;"></div>',
+                humid_s: { card: humidStatCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Header Card
+             * ------------------------------------------------------- */
+            const headerCard = {
+              type: 'custom:button-card',
+              entity: qualId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '28px 28px 44px 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"title right" "stats right"' },
+                  { 'grid-template-columns': '1fr auto' },
+                  { 'align-items': 'flex-start' },
+                  { gap: '16px 28px' },
+                ],
+                custom_fields: {
+                  title: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                  stats: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                  right: [{ 'justify-self': 'end' }, { 'align-self': 'flex-start' }],
+                },
+              },
+              custom_fields: {
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;text-align:left;">'
+                  + `<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">${roomName}</div>`
+                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:2px;">Climate · Air Quality</div>'
+                  + `<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;">${advice}</div>`
+                  + '</div>',
+                stats: { card: statsRowCard },
+                right: { card: rightColCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Graph Card
+             * ------------------------------------------------------- */
+            const graphCard = {
+              type: 'custom:mini-graph-card',
+              entities: [
+                ...(tempId  ? [{ entity: tempId,  name: 'Temp',     color: graphTempColor }] : []),
+                ...(humidId ? [{ entity: humidId, name: 'Humidity', color: 'var(--hemma-badge-climate-color, #C7CED6)', y_axis: 'secondary' }] : []),
+              ],
+              hours_to_show: 12,
+              points_per_hour: 1,
+              line_width: 3,
+              animate: true,
+              smoothing: true,
+              hour24: false,
+              height: 70,
+              decimals: 0,
+              show: {
+                name: false, icon: false, state: false,
+                legend: false, labels: true, labels_secondary: true,
+                fill: 'fade', points: false,
+              },
+              card_mod: { style: graphStyle },
+            };
+
+            /* -------------------------------------------------------
+             * Sensor Tile Helpers
+             * ------------------------------------------------------- */
+            const cleanSensorName = (eid) => {
+              const fn = states[eid]?.attributes?.friendly_name || eid.split('.').pop() || eid;
+              const pName = (variables.room_name || '').trim();
+              let name = fn;
+              if (pName) {
+                const esc = pName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                name = name.replace(new RegExp('^' + esc + '\\s*', 'i'), '');
+              }
+              return name.replace(/_/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+            };
+
+            const threshStatus = (val, good, moderate, high) => {
+              if (val == null || good == null)
+                return { label: val == null ? '—' : 'Value', color: 'rgba(255,255,255,0.4)', pct: 0 };
+              if (val <= good)     return { label: 'Good',     color: 'var(--hemma-badge-air-quality-good-color)',     pct: Math.min(100, (val / high) * 100) };
+              if (val <= moderate) return { label: 'Moderate', color: 'var(--hemma-badge-air-quality-moderate-color)', pct: Math.min(100, (val / high) * 100) };
+              if (val <= high)     return { label: 'Poor',     color: 'var(--hemma-badge-air-quality-poor-color)',     pct: Math.min(100, (val / high) * 100) };
+              return { label: 'Bad', color: 'var(--hemma-badge-air-quality-bad-color)', pct: 100 };
+            };
+
+            const makeSensorCard = (eid) => {
+
+              const val  = safeNum(eid);
+
+              const info = sensorThresh(eid);
+
+              const st   = threshStatus(
+                val,
+                info.good,
+                info.moderate,
+                info.high
+              );
+
+              const name = cleanSensorName(eid);
+
+              const valStr =
+                val != null
+                  ? val.toLocaleString()
+                  : '—';
+
+              const pct = (() => {
+                if (val == null || info.good == null) return 0;
+                const { good, moderate, high } = info;
+                if (val <= good)     return (val / good) * 50;
+                if (val <= moderate) return 50 + ((val - good)     / (moderate - good)) * 25;
+                if (val <= high)     return 75 + ((val - moderate) / (high - moderate)) * 15;
+                return Math.min(100, 90 + ((val - high) / Math.max(high, 1)) * 10);
+              })();
+
+              const gradient =
+
+                st.label === 'Bad'
+
+                  ? `
+                    linear-gradient(
+                      90deg,
+                      #FF7A59 0%,
+                      #FF4D6D 100%
+                    )
+                  `
+
+                  : st.label === 'Poor'
+
+                    ? `
+                      linear-gradient(
+                        90deg,
+                        #FFB347 0%,
+                        #FFD166 100%
+                      )
+                    `
+
+                    : st.label === 'Moderate'
+
+                      ? `
+                        linear-gradient(
+                          90deg,
+                          #FFD166 0%,
+                          #D6FF47 50%,
+                          #B8FF47 100%
+                        )
+                      `
+
+                      : `
+                        linear-gradient(
+                          90deg,
+                          #57FFFC 0%,
+                          #54F2A0 35%,
+                          #65F785 70%,
+                          #4CFA57 100%
+                        )
+                      `;
+
+              return {
+
+                type:'custom:button-card',
+
+                entity:eid,
+
+                tap_action:{
+                  action:'more-info',
+                },
+
+                show_icon:false,
+                show_name:false,
+                show_label:false,
+                show_state:false,
+
+                card_mod:{
+                  style:tileTapStyle,
+                },
+
+                styles:{
+                  card:[
+                    {
+                      background:'rgba(255,255,255,0.045)',
+                    },
+                    {
+                      border:'none',
+                    },
+                    {
+                      borderRadius:'24px',
+                    },
+                    {
+                      boxShadow:'none',
+                    },
+                    {
+                      backdropFilter:'none',
+                    },
+                    {
+                      WebkitBackdropFilter:'none',
+                    },
+                    {
+                      padding:'18px 18px 16px 18px',
+                    },
+                  ],
+
+                  grid:[
+                    {
+                      'grid-template-areas':'"c"',
+                    },
+                    {
+                      'grid-template-columns':'1fr',
+                    },
+                  ],
+
+                  custom_fields:{
+                    c:[
+                      {
+                        'justify-self':'stretch',
+                      },
+                    ],
+                  },
+                },
+
+                custom_fields:{
+                  c:`
+                    <div style="
+                      margin-top:1px;
+                      min-width:0;
+                      overflow:hidden;
+                    ">
+
+                      <div style="
+                        display:flex;
+                        justify-content:space-between;
+                        align-items:center;
+
+                        margin-bottom:8px;
+
+                        gap:8px;
+                      ">
+
+                        <span style="
+                          font-size:13px;
+                          color:rgba(255,255,255,0.88);
+
+                          font-weight:600;
+
+                          white-space:nowrap;
+                          overflow:hidden;
+                          text-overflow:ellipsis;
+
+                          letter-spacing:.01em;
+                        ">
+                          ${name}
+                        </span>
+
+                        <span style="
+                          font-size:13px;
+
+                          color:${st.color};
+
+                          white-space:nowrap;
+
+                          font-weight:600;
+
+                          letter-spacing:.01em;
+
+                          flex-shrink:0;
+                        ">
+                          ${st.label}
+                        </span>
+
+                      </div>
+
+                      <div style="
+                        display:flex;
+                        align-items:baseline;
+
+                        gap:3px;
+                      ">
+
+                        <span style="
+                          font-size:20px;
+                          font-weight:400;
+
+                          color:#ffffff;
+
+                          line-height:1;
+
+                          white-space:nowrap;
+                        ">
+                          ${valStr}
+                        </span>
+
+                        <span style="
+                          font-size:12px;
+
+                          color:rgba(255,255,255,0.55);
+
+                          white-space:nowrap;
+                        ">
+                          ${info.unit}
+                        </span>
+
+                      </div>
+
+                      <div style="
+                        position:relative;
+
+                        height:8px;
+                        width:100%;
+
+                        background:rgba(255,255,255,0.055);
+
+                        border-radius:999px;
+
+                        overflow:hidden;
+
+                        margin-top:10px;
+                      ">
+
+                        <div style="
+                          position:absolute;
+                          inset:0 auto 0 0;
+
+                          width:${pct.toFixed(1)}%;
+
+                          border-radius:999px;
+
+                          background:${gradient};
+
+                          transition:
+                            width .35s ease;
+                        "></div>
+
+                      </div>
+
+                    </div>
+                  `,
+                },
+              };
+            };
+
+            /* -------------------------------------------------------
+             * Sensor Tiles Grid
+             * ------------------------------------------------------- */
+            const cnt    = sensors.length;
+            const isDesk = typeof window !== 'undefined' && window.innerWidth >= 900;
+            const cols   = 2;
+
+            const sKeys = sensors.map((_, i) => 's' + i);
+            const gcd   = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const rem   = cnt % cols;
+            let tileAreas, tileCols;
+            if (rem === 0) {
+              tileCols = 'repeat(' + cols + ', 1fr)';
+              const rows = [];
+              for (let i = 0; i < cnt; i += cols) rows.push('"' + sKeys.slice(i, i + cols).join(' ') + '"');
+              tileAreas = rows.join(' ');
+            } else {
+              const lcm      = cols * rem / gcd(cols, rem);
+              const fullSpan = lcm / cols;
+              const lastSpan = lcm / rem;
+              tileCols       = 'repeat(' + lcm + ', 1fr)';
+              const rows     = [];
+              const fullRows = Math.floor(cnt / cols);
+              for (let r = 0; r < fullRows; r++) {
+                const row = sKeys.slice(r * cols, (r + 1) * cols).map(k => Array(fullSpan).fill(k).join(' ')).join(' ');
+                rows.push('"' + row + '"');
+              }
+              const lastRow = sKeys.slice(fullRows * cols).map(k => Array(lastSpan).fill(k).join(' ')).join(' ');
+              rows.push('"' + lastRow + '"');
+              tileAreas = rows.join(' ');
+            }
+
+            const tileCustomFields = {};
+            const tileFieldStyles  = {};
+            sensors.forEach((eid, i) => {
+              tileCustomFields['s' + i] = { card: makeSensorCard(eid) };
+              tileFieldStyles['s' + i]  = [{ 'justify-self': 'stretch' }];
+            });
+
+            const tilesCard = cnt === 0 ? null : {
+              type: 'custom:button-card',
+              entity: qualId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '0px 28px 20px 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': tileAreas },
+                  { 'grid-template-columns': tileCols },
+                  { gap: '8px' },
+                  { 'align-items': 'start' },
+                ],
+                custom_fields: tileFieldStyles,
+              },
+              custom_fields: tileCustomFields,
+            };
+
+            const cards = [headerCard, graphCard];
+            if (tilesCard) cards.push(tilesCard);
+            const _r = { type: 'vertical-stack', cards };
+            window._hc[_ck] = { h: _ch, r: _r };
+            return _r;
+          ]]]
+
+
+  icon_tap_action:
+    haptic: light
+    action: more-info

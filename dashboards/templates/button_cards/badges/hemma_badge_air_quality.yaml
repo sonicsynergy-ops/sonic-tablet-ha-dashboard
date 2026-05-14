@@ -26,10 +26,7 @@ hemma_badge_air_quality:
     entity_quality: null
     entity_temp: null
     entity_humidity: null
-    entity_pm25: null
-    entity_pm10: null
-    entity_voc: null
-    entity_co2: null
+    sensors: null
 
   icon: mdi:air-filter
 
@@ -46,7 +43,7 @@ hemma_badge_air_quality:
       const st      = stRaw.toLowerCase();
       const hide    = !enabled || !hasEnt || !stRaw || ['unknown','unavailable','none'].includes(st);
 
-      const svgUrl = ['bad', 'very bad'].includes(st)
+      const svgUrl = ['poor', 'bad', 'very bad'].includes(st)
         ? '/local/hemma/icons/aqi-high.svg'
         : '/local/hemma/icons/aqi-medium.svg';
 
@@ -86,11 +83,11 @@ hemma_badge_air_quality:
       - --hemma-icon-color: >
           [[[
             const s = String(entity?.state || 'unknown').toLowerCase();
-            if (s === 'excellent') return 'var(--hemma-badge-temp-comfortable-color)';
+            if (s === 'excellent') return 'var(--hemma-badge-air-quality-excellent-color)';
             if (s === 'good')      return 'var(--hemma-badge-air-quality-good-color)';
-            if (s === 'moderate')  return 'var(--hemma-badge-air-quality-moderate-color)';
-            if (s === 'bad')       return 'var(--hemma-badge-temp-hot-color)';
-            if (s === 'very bad')  return 'var(--hemma-badge-temp-very-hot-color)';
+            if (s === 'moderate' || s === 'fair') return 'var(--hemma-badge-air-quality-moderate-color)';
+            if (s === 'poor')      return 'var(--hemma-badge-air-quality-poor-color)';
+            if (s === 'bad' || s === 'very bad' || s === 'very poor') return 'var(--hemma-badge-air-quality-bad-color)';
             return 'var(--disabled-text-color)';
           ]]]
     icon:

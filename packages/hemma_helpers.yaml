@@ -79,7 +79,6 @@ input_select:
       - heat
     initial: cool
 
-
 template:
   - trigger:
       - platform: homeassistant

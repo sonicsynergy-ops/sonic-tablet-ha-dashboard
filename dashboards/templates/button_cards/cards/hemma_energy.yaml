@@ -1,6 +1,7 @@
 hemma_energy:
   template:
     - hemma_entity
+    - hemma_popup_energy
 
   show_name: true
   show_state: true
@@ -9,9 +10,12 @@ hemma_energy:
   variables:
     icon: energy
     high_threshold: 500
-
-  tap_action:
-    action: more-info
+    room_name: null
+    entity_power: null
+    entity_usage_today: null
+    entity_usage_month: null
+    entity_cost_today: null
+    entity_cost_month: null
 
   icon_tap_action:
     action: more-info

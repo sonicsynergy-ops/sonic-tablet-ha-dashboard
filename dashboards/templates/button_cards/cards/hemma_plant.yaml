@@ -1,7 +1,7 @@
 hemma_plant:
   template:
     - hemma_entity
-    - hemma_plant_popup
+    - hemma_popup_plant
 
   variables:
     icon: plant
@@ -15,6 +15,41 @@ hemma_plant:
   state_display: |
     [[[
       if (!entity?.state || entity.state === 'unavailable') return '— %';
+
+      const sensors = Array.isArray(variables.sensors) ? variables.sensors.filter(Boolean) : [];
+
+      if (sensors.length > 0) {
+        const safeNum = (id) => {
+          const s = states[id]?.state;
+          if (!s || s === 'unavailable' || s === 'unknown') return null;
+          const n = parseFloat(s);
+          return isNaN(n) ? null : n;
+        };
+        const getSensorType = (eid) => {
+          const id = eid.toLowerCase();
+          if (id.includes('moisture'))                       return 'moisture';
+          if (id.includes('illumin') || id.includes('lux')) return 'illuminance';
+          if (id.includes('temp'))                           return 'temperature';
+          if (id.includes('conductiv'))                      return 'conductivity';
+          if (id.includes('humid'))                          return 'humidity';
+          return null;
+        };
+        const attrs    = entity.attributes || {};
+        const scorable = sensors.filter(id => { const t = getSensorType(id); return t && Object.prototype.hasOwnProperty.call(attrs, t + '_status'); });
+        const scored   = scorable.filter(id => safeNum(id) != null);
+
+        if (scorable.length > 0 && scored.length === 0) return 'Unavailable';
+
+        if (scored.length > 0) {
+          const bad   = scored.filter(id => { const v = attrs[getSensorType(id) + '_status']; return v && v !== 'ok' && v !== 'null'; }).length;
+          const ratio = (scored.length - bad) / scored.length;
+          if (ratio >= 1)   return 'Healthy';
+          if (ratio >= 0.8) return 'Needs care';
+          if (ratio >= 0.6) return 'Struggling';
+          if (ratio >= 0.4) return 'Poor';
+          return 'Critical';
+        }
+      }
 
       if (entity.state === 'ok') return 'Healthy';
       if (entity.state === 'problem') return 'Needs Attention';
@@ -32,6 +67,35 @@ hemma_plant:
       value: |
         [[[
           if (entity?.state === 'problem') return true;
+
+          const sensors = Array.isArray(variables.sensors) ? variables.sensors.filter(Boolean) : [];
+          if (sensors.length > 0) {
+            const safeNum = (id) => {
+              const s = states[id]?.state;
+              if (!s || s === 'unavailable' || s === 'unknown') return null;
+              const n = parseFloat(s);
+              return isNaN(n) ? null : n;
+            };
+            const getSensorType = (eid) => {
+              const id = eid.toLowerCase();
+              if (id.includes('moisture'))                       return 'moisture';
+              if (id.includes('illumin') || id.includes('lux')) return 'illuminance';
+              if (id.includes('temp'))                           return 'temperature';
+              if (id.includes('conductiv'))                      return 'conductivity';
+              if (id.includes('humid'))                          return 'humidity';
+              return null;
+            };
+            const attrs = entity?.attributes || {};
+            const hasProblems = sensors.some(id => {
+              if (safeNum(id) == null) return false;
+              const type = getSensorType(id);
+              if (!type) return false;
+              const v = attrs[type + '_status'];
+              return v && v !== 'ok' && v !== 'null';
+            });
+            if (hasProblems) return true;
+          }
+
           const threshold = Number(variables.low_threshold ?? 30);
           const val = parseFloat(entity?.state);
           if (Number.isFinite(val)) return val <= threshold;

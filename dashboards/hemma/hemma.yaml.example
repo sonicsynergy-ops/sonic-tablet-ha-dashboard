@@ -126,7 +126,7 @@ views:
           # Thermostat
           - type: custom:button-card
             template: hemma_thermostat
-            entity: climate.YOUR_HOME_THERMOSTAT  # e.g., climate.home
+            entity: climate.YOUR_HOME_THERMOSTAT          # e.g., climate.home
             name: Thermostat
             variables:
               temp_sensor: sensor.YOUR_HOME_TEMPERATURE
@@ -134,50 +134,74 @@ views:
           # Front Door Lock
           - type: custom:button-card
             template: hemma_lock
-            entity: lock.YOUR_FRONT_DOOR  # e.g., lock.front_door
+            entity: lock.YOUR_FRONT_DOOR                  # e.g., lock.front_door
             name: Front Door
             variables:
               icon: door
               show_toggle: true
-              battery_entity: sensor.YOUR_LOCK_BATTERY          # Optional
+              battery_entity: sensor.YOUR_LOCK_BATTERY    # optional
 
           # Doorbell Camera
           - type: custom:button-card
             template: hemma_doorbell
-            entity: camera.YOUR_DOORBELL  # e.g., camera.front_door
+            entity: camera.YOUR_DOORBELL                  # e.g., camera.front_door
             name: Doorbell
             variables:
               icon: doorbell
-              battery_entity: sensor.YOUR_DOORBELL_BATTERY  # Optional
+              battery_entity: sensor.YOUR_DOORBELL_BATTERY  # optional
 
-          # Network Speed (shows WAN download / upload from router integration)
+          # Battery Status (shows battery levels for multiple devices in a popup)
           - type: custom:button-card
+            template: hemma_battery
+            name: Battery Status
+            entity: sensor.YOUR_PRIMARY_BATTERY           # any battery entity to display on the card
+            variables:
+              entity_filter:
+                - sensor.YOUR_LOCK_BATTERY
+                - sensor.YOUR_DOORBELL_BATTERY
+                - sensor.YOUR_MOTION_SENSOR_BATTERY
+                # Add any additional battery sensors here
+
+          # Network Speed (shows WAN download/upload, ping, and sub-interface stats)
+          - type: custom:button-card
+            entity: sensor.YOUR_WAN_DOWNLOAD_SPEED        # e.g., sensor.router_wan_download_speed
             template: hemma_network
-            entity: sensor.YOUR_WAN_DOWNLOAD_SPEED  # e.g., sensor.rt_ax86u_wan_download_speed
             name: Network
             variables:
-              upload_sensor: sensor.YOUR_WAN_UPLOAD_SPEED  # e.g., sensor.rt_ax86u_wan_upload_speed
+              room_name: Home
+              entity_upload: sensor.YOUR_WAN_UPLOAD_SPEED
+              entity_status: binary_sensor.YOUR_INTERNET_STATUS  # e.g., binary_sensor.router_internet
+              entity_ping: sensor.YOUR_PING                      # e.g., sensor.ping_cloudflare
+              entity_stat_1: sensor.YOUR_WIRED_DOWNLOAD_SPEED    # optional sub-stats
+              entity_stat_2: sensor.YOUR_WIRED_UPLOAD_SPEED
+              entity_stat_3: sensor.YOUR_WIFI_DOWNLOAD_SPEED
+              entity_stat_4: sensor.YOUR_WIFI_UPLOAD_SPEED
 
-          # Energy (shows current energy consumption)
+          # Energy Usage (whole-home power consumption with today/month totals)
           - type: custom:button-card
+            entity: sensor.YOUR_HOME_POWER                # e.g., sensor.home_current_consumption
             template: hemma_energy
-            entity: sensor.YOUR_ENERGY_CONSUMPTION
-            name: Active Energy
+            name: Energy Usage
+            variables:
+              room_name: Home
+              entity_power: sensor.YOUR_HOME_POWER
+              entity_usage_today: sensor.YOUR_ENERGY_TODAY          # optional kWh today
+              entity_usage_month: sensor.YOUR_ENERGY_MONTH          # optional kWh this month
+              entity_cost_today: sensor.YOUR_ENERGY_COST_TODAY      # optional cost today
+              entity_cost_month: sensor.YOUR_ENERGY_COST_MONTH      # optional cost this month
 
-          # Updates (shows available HA updates)
+          # Updates (shows pending Home Assistant / integration updates)
           - type: custom:button-card
             template: hemma_updates
-            entity: sensor.YOUR_UPDATES
+            entity: sensor.YOUR_UPDATES                   # e.g., sensor.pending_updates
             name: Available Updates
 
-          # Motion Overview Card
+          # Motion Overview Card (optional)
           # Shows active room name when motion is detected, "Clear" when none.
-          # Sensor entity IDs for navbar badge are configured separately
-          # in packages/hemma_helpers.yaml (input_text section).
           # - type: custom:button-card
           #   template: hemma_motion
           #   variables:
-          #     default_name: Home          # shown when no motion detected
+          #     default_name: Home
           #     sensor_1: binary_sensor.YOUR_LIVING_ROOM_MOTION
           #     label_1: Living Room
           #     sensor_2: binary_sensor.YOUR_BEDROOM_MOTION
@@ -200,19 +224,19 @@ views:
         variables:
           image: livingroom
           image_position: center center
-          # mobile_background: true # Enable this if you add mobile backgrounds to /local/hemma/mobile/
+          # mobile_background: true
 
-          # Climate (optional - shows group badge + expandable sub-badges for temp/humidity/quality)
+          # Climate (optional)
           show_climate: false
           # climate_entity_1: climate.YOUR_LIVING_ROOM_CLIMATE
 
-          # Sensors (used by the climate sub-badges when show_climate is true)
+          # Sensors
           # temp_sensor_1: sensor.YOUR_LIVING_ROOM_TEMP
-          # temp_sensor_2: sensor.YOUR_TEMP_2          # optional additional sensors
+          # temp_sensor_2: sensor.YOUR_TEMP_2
           # humidity_sensor: sensor.YOUR_LIVING_ROOM_HUMIDITY
           # quality_sensor: sensor.YOUR_AIR_QUALITY
 
-          # Air Quality Popup (optional - shown when tapping the air quality badge)
+          # Air Quality Popup (optional)
           # aqi_room_name: Living Room
           # aqi_entity_pm25: sensor.YOUR_PM25
           # aqi_entity_pm10: sensor.YOUR_PM10
@@ -225,13 +249,13 @@ views:
           show_lights: false
           # light_entity_1: light.YOUR_LIVING_ROOM_LIGHTS
 
-          # Weather Widget (optional - set show_weather: true and add weather_entity to enable)
+          # Weather Widget (optional)
           show_weather: false
           # weather_entity: weather.YOUR_WEATHER
           # weather_temp_sensor: sensor.YOUR_OUTDOOR_TEMP
-          temp_unit: 'F'                                  # 'F' for Fahrenheit, 'C' for Celsius
+          temp_unit: 'F'
 
-          # Media Player Badges (optional - shows what's playing in this room)
+          # Media Player Badges (optional)
           show_media: false
           # show_media_player_1: true
           # media_player_1: media_player.YOUR_LIVING_ROOM_PLAYER
@@ -253,17 +277,25 @@ views:
               temp_sensor: sensor.YOUR_LIVING_ROOM_TEMP
 
           - type: custom:button-card
+            template: hemma_light
+            entity: light.YOUR_LIVING_ROOM_LIGHTS
+            name: Lights
+            variables:
+              icon: light
+              show_toggle: true
+
+          - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_LIVING_ROOM_TV
+            entity: media_player.YOUR_LIVING_ROOM_APPLE_TV
             name: Apple TV
             variables:
               icon: apple_tv
               show_progress: true
-              progress_entity: media_player.YOUR_LIVING_ROOM_TV
+              progress_entity: media_player.YOUR_LIVING_ROOM_APPLE_TV
 
           - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_TV
+            entity: media_player.YOUR_LIVING_ROOM_TV
             name: TV
             variables:
               icon: tv
@@ -271,28 +303,44 @@ views:
 
           - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_MEDIA_PLAYER
+            entity: media_player.YOUR_LIVING_ROOM_SPEAKER
             name: Sonos
             variables:
               icon: speaker
 
+          # Active Energy (room-level power monitoring)
+          - type: custom:button-card
+            entity: sensor.YOUR_LIVING_ROOM_POWER
+            template: hemma_energy
+            name: Active Energy
+            variables:
+              room_name: Living Room
+              entity_power: sensor.YOUR_LIVING_ROOM_POWER
+              entity_usage_today: sensor.YOUR_LIVING_ROOM_ENERGY_TODAY    # optional
+              entity_usage_month: sensor.YOUR_LIVING_ROOM_ENERGY_MONTH    # optional
+              entity_cost_today: sensor.YOUR_LIVING_ROOM_COST_TODAY       # optional
+              entity_cost_month: sensor.YOUR_LIVING_ROOM_COST_MONTH       # optional
+
           - type: custom:button-card
             template: hemma_curtain
-            entity: cover.YOUR_CURTAIN
+            entity: cover.YOUR_LIVING_ROOM_CURTAIN
             name: Curtain
             variables:
               icon: curtain
+              show_toggle: true
 
           - type: custom:button-card
             template: hemma_fan
-            entity: fan.YOUR_FAN
+            entity: fan.YOUR_LIVING_ROOM_FAN
             name: Fan
             variables:
               icon: fan
+              show_toggle: true
 
+          # Plant Monitor (optional - requires plant integration + sensors)
           - type: custom:button-card
             template: hemma_plant
-            entity: plant.YOUR_PLANT
+            entity: plant.YOUR_PLANT                      # e.g., plant.rubber_tree
             name: Rubber Tree
             variables:
               sensors:
@@ -317,18 +365,18 @@ views:
         variables:
           image: kitchen
           image_position: center center
-          # mobile_background: true # Enable this if you add mobile backgrounds to /local/hemma/mobile/
+          # mobile_background: true
 
-          # Climate (optional - shows group badge + expandable sub-badges for temp/humidity/quality)
+          # Climate (optional)
           show_climate: false
           # climate_entity_1: climate.YOUR_KITCHEN_CLIMATE
 
-          # Sensors (used by the climate sub-badges when show_climate is true)
+          # Sensors
           # temp_sensor_1: sensor.YOUR_KITCHEN_TEMP
           # humidity_sensor: sensor.YOUR_KITCHEN_HUMIDITY
           # quality_sensor: sensor.YOUR_AIR_QUALITY
 
-          # Air Quality Popup (optional - shown when tapping the air quality badge)
+          # Air Quality Popup (optional)
           # aqi_room_name: Kitchen
           # aqi_entity_pm25: sensor.YOUR_PM25
           # aqi_entity_pm10: sensor.YOUR_PM10
@@ -368,18 +416,28 @@ views:
               icon: vacuum
 
           - type: custom:button-card
-            template: hemma_media
-            entity: media_player.YOUR_KITCHEN_MEDIA_PLAYER
-            name: Speaker
+            template: hemma_light
+            entity: light.YOUR_KITCHEN_LIGHTS
+            name: Lights
             variables:
-              icon: speaker
+              icon: light
+              show_toggle: true
 
           - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_KITCHEN_MEDIA_PLAYER
+            entity: media_player.YOUR_KITCHEN_SPEAKER
+            name: Speaker
+            variables:
+              icon: speaker
+              show_progress: true
+
+          - type: custom:button-card
+            template: hemma_media
+            entity: media_player.YOUR_KITCHEN_HOMEPOD     # optional second speaker
             name: HomePod
             variables:
               icon: homepod
+              show_progress: true
 
   # ------------------------------------------------------
   # BEDROOM
@@ -396,18 +454,18 @@ views:
         variables:
           image: bedroom
           image_position: center center
-          # mobile_background: true # Enable this if you add mobile backgrounds to /local/hemma/mobile/
+          # mobile_background: true
 
-          # Climate (optional - shows group badge + expandable sub-badges for temp/humidity/quality)
+          # Climate (optional)
           show_climate: false
           # climate_entity_1: climate.YOUR_BEDROOM_CLIMATE
 
-          # Sensors (used by the climate sub-badges when show_climate is true)
+          # Sensors
           # temp_sensor_1: sensor.YOUR_BEDROOM_TEMP
           # humidity_sensor: sensor.YOUR_BEDROOM_HUMIDITY
           # quality_sensor: sensor.YOUR_BEDROOM_AIR_QUALITY
 
-          # Air Quality Popup (optional - shown when tapping the air quality badge)
+          # Air Quality Popup (optional)
           # aqi_room_name: Bedroom
           # aqi_entity_pm25: sensor.YOUR_PM25
           # aqi_entity_pm10: sensor.YOUR_PM10
@@ -447,11 +505,21 @@ views:
               temp_sensor: sensor.YOUR_BEDROOM_TEMP
 
           - type: custom:button-card
+            template: hemma_light
+            entity: light.YOUR_BEDROOM_LIGHTS
+            name: Lights
+            variables:
+              icon: light
+              show_toggle: true
+
+          - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_BEDROOM_TV
+            entity: media_player.YOUR_BEDROOM_APPLE_TV
             name: Apple TV
             variables:
               icon: apple_tv
+              show_progress: true
+              progress_entity: media_player.YOUR_BEDROOM_APPLE_TV
 
           - type: custom:button-card
             template: hemma_media
@@ -463,10 +531,23 @@ views:
 
           - type: custom:button-card
             template: hemma_media
-            entity: media_player.YOUR_BEDROOM_MEDIA_PLAYER
+            entity: media_player.YOUR_BEDROOM_SPEAKER
             name: Speaker
             variables:
               icon: speaker
+
+          # Active Energy (room-level power monitoring)
+          - type: custom:button-card
+            entity: sensor.YOUR_BEDROOM_POWER
+            template: hemma_energy
+            name: Active Energy
+            variables:
+              room_name: Bedroom
+              entity_power: sensor.YOUR_BEDROOM_POWER
+              entity_usage_today: sensor.YOUR_BEDROOM_ENERGY_TODAY    # optional
+              entity_usage_month: sensor.YOUR_BEDROOM_ENERGY_MONTH    # optional
+              entity_cost_today: sensor.YOUR_BEDROOM_COST_TODAY       # optional
+              entity_cost_month: sensor.YOUR_BEDROOM_COST_MONTH       # optional
 
           - type: custom:button-card
             template: hemma_fan
@@ -498,3 +579,16 @@ views:
             variables:
               icon: humidifier
               show_toggle: true
+
+          # Plant Monitor (optional - requires plant integration + sensors)
+          - type: custom:button-card
+            template: hemma_plant
+            entity: plant.YOUR_PLANT                      # e.g., plant.monstera
+            name: Monstera
+            variables:
+              sensors:
+                - sensor.YOUR_PLANT_MOISTURE
+                - sensor.YOUR_PLANT_ILLUMINANCE
+                - sensor.YOUR_PLANT_TEMPERATURE
+                - sensor.YOUR_PLANT_AIR_HUMIDITY
+                - sensor.YOUR_PLANT_CONDUCTIVITY

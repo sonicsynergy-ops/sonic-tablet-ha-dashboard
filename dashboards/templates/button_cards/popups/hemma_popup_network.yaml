@@ -1,0 +1,1145 @@
+# Network Popup
+hemma_popup_network:
+  template:
+    - hemma_popup_base
+
+  variables:
+    room_name: null
+
+    entity_download: null
+    entity_upload: null
+    entity_ping: null
+    entity_status: null
+
+    entity_stat_1: null
+    entity_stat_2: null
+    entity_stat_3: null
+    entity_stat_4: null
+
+    idle_threshold: 1
+    light_threshold: 10
+    heavy_threshold: 50
+
+  tap_action:
+    browser_mod:
+      data:
+        content: |
+          [[[
+            /* -------------------------------------------------------
+             * Helpers
+             * ------------------------------------------------------- */
+
+            const safeNum = (id) => {
+              if (!id) return null;
+              const s = states[id]?.state;
+              if (!s || s === 'unavailable' || s === 'unknown') return null;
+              const n = parseFloat(s);
+              return isNaN(n) ? null : n;
+            };
+
+            const displayPrecision = (id) => {
+              if (!id) return null;
+              const reg = hass?.entities?.[id];
+              if (reg?.display_precision != null) return reg.display_precision;
+              const suggested = states[id]?.attributes?.suggested_display_precision;
+              if (suggested != null) return suggested;
+              return null;
+            };
+
+            const fmt = (v, id) => {
+              if (v == null) return '—';
+              const prec = displayPrecision(id);
+              if (prec != null) return v.toFixed(prec);
+              return v >= 100 ? Math.round(v).toString() : v.toFixed(1);
+            };
+
+            const friendlyName = (id, fallback = 'Sensor') => {
+              if (!id) return fallback;
+              const raw = states[id]?.attributes?.friendly_name;
+              if (raw) return raw;
+
+              const slug = String(id).split('.')[1] || id;
+              return slug
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase());
+            };
+
+            const baseCard = {
+              type: 'custom:button-card',
+              show_icon: false,
+              show_name: false,
+              show_label: false,
+              show_state: false,
+            };
+
+            /* -------------------------------------------------------
+             * Shared Local Styles
+             * ------------------------------------------------------- */
+
+            const noHoverStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                overflow: visible !important;
+                cursor: default !important;
+              }
+
+              ha-card:hover {
+                box-shadow: none !important;
+                border-color: transparent !important;
+              }
+
+              ha-ripple {
+                display: none !important;
+              }
+            `;
+
+            const wrapperStyle = noHoverStyle;
+            const contentCardStyle = noHoverStyle + `@media (max-width: 600px) { ha-card { padding-left: 14px !important; padding-right: 14px !important; } }`;
+
+            const tileTapStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }
+              ha-card:hover { background: rgba(255,255,255,0.09) !important; transform: translateY(-1px) !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const tapStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+
+                box-shadow: none !important;
+
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+
+                overflow: visible !important;
+              }
+
+              ha-card #container {
+                transition:
+                  opacity 0.18s ease,
+                  filter 0.18s ease !important;
+              }
+
+              ha-card:hover #container {
+
+                opacity: 1;
+
+                filter:
+                  brightness(1.12)
+                  saturate(1.08)
+                  drop-shadow(0 0 10px rgba(255,255,255,0.05));
+              }
+
+              ha-ripple {
+                display: none !important;
+              }
+            `;
+
+            const graphStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                overflow: hidden !important;
+                padding: 10px 0px 10px 0px !important;
+                --primary-color: transparent !important;
+              }
+
+              ha-card:hover {
+                box-shadow: none !important;
+                border-color: transparent !important;
+              }
+
+              .graph {
+                position: relative !important;
+                overflow: visible !important;
+              }
+
+              .graph__container {
+                overflow: visible !important;
+              }
+
+              .graph__container svg {
+                width: calc(100% + 100px) !important;
+                margin-left: -50px !important;
+                display: block !important;
+                overflow: visible !important;
+
+                -webkit-mask-image:
+                  linear-gradient(
+                    to right,
+                    rgba(0,0,0,0) 0%,
+                    rgba(0,0,0,0) 11%,
+                    rgba(0,0,0,0.1) 16%,
+                    rgba(0,0,0,0.5) 25%,
+                    black 38%,
+                    black 65%,
+                    rgba(0,0,0,0.5) 78%,
+                    rgba(0,0,0,0.1) 87%,
+                    rgba(0,0,0,0) 90%,
+                    rgba(0,0,0,0) 100%
+                  ),
+                  linear-gradient(
+                    to bottom,
+                    transparent 0%,
+                    black 12%,
+                    black 78%,
+                    transparent 100%
+                  );
+
+                mask-image:
+                  linear-gradient(
+                    to right,
+                    rgba(0,0,0,0) 0%,
+                    rgba(0,0,0,0) 11%,
+                    rgba(0,0,0,0.1) 16%,
+                    rgba(0,0,0,0.5) 25%,
+                    black 38%,
+                    black 65%,
+                    rgba(0,0,0,0.5) 78%,
+                    rgba(0,0,0,0.1) 87%,
+                    rgba(0,0,0,0) 90%,
+                    rgba(0,0,0,0) 100%
+                  ),
+                  linear-gradient(
+                    to bottom,
+                    transparent 0%,
+                    black 12%,
+                    black 78%,
+                    transparent 100%
+                  );
+
+                -webkit-mask-composite: destination-in;
+                mask-composite: intersect;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-size: 100% 100%;
+                mask-size: 100% 100%;
+              }
+
+              .graph__line {
+                opacity: 0.95;
+                filter: drop-shadow(0 0 3px rgba(255,255,255,0.06));
+              }
+
+              .graph__fill {
+                opacity: 0.42;
+              }
+
+              .graph.flex {
+                margin-left: 0px !important;
+                margin-right: 0px !important;
+                padding-bottom: 0px !important;
+              }
+
+              .graph__hover {
+                overflow: visible !important;
+                pointer-events: auto !important;
+              }
+
+              .graph__labels {
+                overflow: visible !important;
+              }
+
+              .graph__label {
+                font-size: 11px !important;
+                font-weight: 500 !important;
+              }
+            `;
+
+            /* -------------------------------------------------------
+             * Entity Resolution
+             * ------------------------------------------------------- */
+
+            const dlId =
+              variables.entity_download ||
+              variables.entity_stat_1 ||
+              entity?.entity_id;
+
+            const ulId =
+              variables.entity_upload ||
+              variables.entity_stat_2;
+
+            const statusId =
+              variables.entity_status;
+
+            const wiredDlId =
+              variables.entity_stat_1 || variables.entity_wired_dl;
+
+            const wiredUlId =
+              variables.entity_stat_2 || variables.entity_wired_ul;
+
+            const wifiDlId =
+              variables.entity_stat_3 || variables.entity_wifi_dl;
+
+            const wifiUlId =
+              variables.entity_stat_4 || variables.entity_wifi_ul;
+
+            const pingId = variables.entity_ping;
+
+            /* -------------------------------------------------------
+             * Values
+             * ------------------------------------------------------- */
+
+            const dl = safeNum(dlId);
+            const ul = safeNum(ulId);
+
+            const _ck = 'hemma_network_' + (dlId || 'x');
+            const _ch = [states[dlId]?.state, states[ulId]?.state, states[statusId]?.state, states[wiredDlId]?.state, states[wiredUlId]?.state, states[wifiDlId]?.state, states[wifiUlId]?.state, states[pingId]?.state].join('|');
+            window._hc = window._hc || {};
+            if (window._hc[_ck]?.h === _ch) return window._hc[_ck].r;
+
+            const dlOk = Number.isFinite(dl);
+            const ulOk = Number.isFinite(ul);
+
+            /* -------------------------------------------------------
+             * Status
+             * ------------------------------------------------------- */
+
+            const statusRaw = statusId ? states[statusId]?.state : null;
+            const online = statusRaw === 'on';
+
+            const statusLabel = statusRaw
+              ? (online ? 'Online' : 'Offline')
+              : '—';
+
+            const statusColor = online
+              ? 'var(--hemma-badge-network-online-color, #44e371)'
+              : (
+                  statusRaw
+                    ? 'var(--hemma-badge-network-offline-color, #ff453a)'
+                    : 'rgba(255,255,255,0.4)'
+                );
+
+            /* -------------------------------------------------------
+             * Advice
+             * ------------------------------------------------------- */
+
+            const roomName = variables.room_name || 'Network';
+
+            const max = Math.max(
+              dlOk ? dl : 0,
+              ulOk ? ul : 0
+            );
+
+            const idle = Number(variables.idle_threshold ?? 1);
+            const light = Number(variables.light_threshold ?? 10);
+            const heavy = Number(variables.heavy_threshold ?? 50);
+
+            const tier = max < idle
+              ? 'Idle'
+              : max < light
+                ? 'Light'
+                : max < heavy
+                  ? 'Active'
+                  : 'Heavy';
+
+            const dir = (!dlOk || (ulOk && ul > dl))
+              ? 'Upload'
+              : 'Download';
+
+            let advice;
+
+            if (dlOk || ulOk) {
+              advice = max < idle
+                ? 'Connection idle'
+                : `${tier} ${dir}`;
+            } else if (statusRaw) {
+              advice = online
+                ? 'Connection stable'
+                : 'No connection';
+            } else {
+              advice = 'No status data';
+            }
+
+            /* -------------------------------------------------------
+             * Ping Gauge
+             * ------------------------------------------------------- */
+
+            const ping = safeNum(pingId);
+            const pingMax = 200;
+            const pingRadius = 42;
+            const pingCircumference = 2 * Math.PI * pingRadius;
+            const pingProgress = ping != null ? 1 - Math.min(ping / pingMax, 1) : 0;
+            const pingDashOffset = pingCircumference - (pingProgress * pingCircumference);
+
+            let pingColor = 'var(--hemma-popup-green-color, #67f5a0)';
+            if (ping == null) {
+              pingColor = 'rgba(255,255,255,0.15)';
+            } else if (ping >= 150) {
+              pingColor = 'var(--hemma-popup-red-color, #ff453a)';
+            } else if (ping >= 60) {
+              pingColor = 'var(--hemma-popup-orange-color, #ff9230)';
+            } else if (ping >= 20) {
+              pingColor = 'var(--hemma-popup-yellow-color, #ffd600)';
+            }
+
+            const fmtPing = (v) => v == null ? '—' : String(Math.round(v));
+
+            /* -------------------------------------------------------
+             * Status Badge Card (tappable — more-info for entity_status)
+             * ------------------------------------------------------- */
+
+            const statusBadgeCard = {
+              type: 'custom:button-card',
+              entity: statusId || dlId,
+              name: statusLabel,
+              tap_action: statusId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false,
+              show_name: true,
+              show_label: false,
+              show_state: false,
+              card_mod: {
+                style: [
+                  ':host {',
+                  '  --ha-card-box-shadow: none !important;',
+                  '  --button-card-box-shadow: none !important;',
+                  '  --button-card-box-shadow-hover: none !important;',
+                  '}',
+                  'ha-card {',
+                  `  background: color-mix(in srgb,${statusColor} 12%,transparent) !important;`,
+                  `  border: 1px solid color-mix(in srgb,${statusColor} 35%,transparent) !important;`,
+                  '  border-radius: 999px !important;',
+                  '  box-shadow: none !important;',
+                  '  backdrop-filter: none !important;',
+                  '  -webkit-backdrop-filter: none !important;',
+                  '  transition: background 0.2s ease, filter 0.2s ease !important;',
+                  '}',
+                  `ha-card:hover { box-shadow: none !important; background: color-mix(in srgb,${statusColor} 22%,transparent) !important; ${statusId ? 'filter: brightness(1.2) saturate(1.1);' : ''} }`,
+                  'ha-ripple { display: none !important; }',
+                ].join('\n'),
+              },
+              styles: {
+                card: [
+                  {
+                    background: `color-mix(in srgb,${statusColor} 12%,transparent)`
+                  },
+                  {
+                    border: `1px solid color-mix(in srgb,${statusColor} 35%,transparent)`
+                  },
+                  {
+                    'border-radius': '999px'
+                  },
+                  {
+                    'box-shadow': 'none'
+                  },
+                  {
+                    padding: '8px 15px'
+                  },
+                ],
+
+                name: [
+                  {
+                    'font-size': '15px'
+                  },
+                  {
+                    'font-weight': '500'
+                  },
+                  {
+                    color: statusColor
+                  },
+                  {
+                    'white-space': 'nowrap'
+                  },
+                  {
+                    'font-family': 'var(--primary-font-family,system-ui)'
+                  },
+                ],
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Stat Cards
+             * ------------------------------------------------------- */
+
+            const dlStatCard = {
+              ...baseCard,
+              entity: dlId,
+              tap_action: { action: 'more-info' },
+              card_mod: { style: tapStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"c"' },
+                  { 'grid-template-columns': '1fr' },
+                ],
+                custom_fields: {
+                  c: [{ 'justify-self': 'start' }],
+                },
+              },
+              custom_fields: {
+                c: `
+                  <div>
+                    <div style="display:flex;align-items:baseline;gap:4px;padding-right:6px;">
+                      <span style="font-size:26px;font-weight:400;color:#ffffff;line-height:1.15;">${fmt(dl, dlId)}</span>
+                      <span style="font-size:14px;color:rgba(255,255,255,0.7);">Mbit/s</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:7px;">
+                      <span style="width:8px;height:8px;background:var(--hemma-badge-network-low-color, #44e371);border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                      <span style="font-size:14px;color:rgba(255,255,255,0.75);">Download</span>
+                    </div>
+                  </div>
+                `,
+              },
+            };
+
+            const ulStatCard = {
+              ...baseCard,
+              entity: ulId || dlId,
+              tap_action: ulId ? { action: 'more-info' } : { action: 'none' },
+              card_mod: { style: ulId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"c"' },
+                  { 'grid-template-columns': '1fr' },
+                ],
+                custom_fields: {
+                  c: [{ 'justify-self': 'start' }],
+                },
+              },
+              custom_fields: {
+                c: `
+                  <div>
+                    <div style="display:flex;align-items:baseline;gap:4px;padding-left:6px;">
+                      <span style="font-size:26px;font-weight:400;color:#ffffff;line-height:1.15;">${fmt(ul, ulId)}</span>
+                      <span style="font-size:14px;color:rgba(255,255,255,0.7);">Mbit/s</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:7px;margin-left:6px;">
+                      <span style="width:8px;height:8px;background:var(--hemma-badge-network-active-color, #ffd600);border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                      <span style="font-size:14px;color:rgba(255,255,255,0.75);">Upload</span>
+                    </div>
+                  </div>
+                `,
+              },
+            };
+
+            const statsWrapperCard = {
+              ...baseCard,
+              entity: dlId,
+              tap_action: { action: 'none' },
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [
+                  { display: 'flex' },
+                  { 'flex-direction': 'row' },
+                  { 'align-items': 'flex-start' },
+                  { gap: '0' },
+                ],
+                custom_fields: {
+                  dl_stat: [{ flex: '0 0 auto' }, { order: '1' }],
+                  div:     [{ flex: '0 0 auto' }, { 'align-self': 'stretch' }, { order: '2' }],
+                  ul_stat: [{ flex: '0 0 auto' }, { order: '3' }],
+                },
+              },
+              custom_fields: {
+                dl_stat: { card: dlStatCard },
+                div:     '<div style="width:2px;height:100%;background:rgba(255,255,255,0.09);margin:0 12px;"></div>',
+                ul_stat: { card: ulStatCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Ping Gauge Card
+             * ------------------------------------------------------- */
+
+            const pingGaugeCard = {
+              type: 'custom:button-card',
+              entity: pingId || dlId,
+              tap_action: pingId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: pingId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'center' }] },
+              },
+              custom_fields: {
+                c: '<div style="position:relative;width:120px;height:120px;">'
+                  + `<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">`
+                    + `<circle cx="50" cy="50" r="${pingRadius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>`
+                    + (ping != null ? `<circle cx="50" cy="50" r="${pingRadius}" fill="none" stroke="${pingColor}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${pingCircumference}" stroke-dashoffset="${pingDashOffset}"/>` : '')
+                  + '</svg>'
+                  + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
+                    + '<div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.08em;font-weight:500;">PING</div>'
+                    + `<div style="color:${pingColor};font-size:28px;font-weight:600;line-height:1;">${fmtPing(ping)}</div>`
+                    + '<div style="color:rgba(255,255,255,0.6);font-size:14px;margin-top:-4px;">ms</div>'
+                  + '</div>'
+                  + '</div>',
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Right Column: status badge + ping gauge
+             * ------------------------------------------------------- */
+
+            const rightColCard = {
+              type: 'custom:button-card',
+              entity: dlId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [
+                  { display: 'flex' }, { 'flex-direction': 'column' }, { 'align-items': 'flex-end' }, { gap: '28px' },
+                ],
+                custom_fields: {
+                  pill: [{ flex: '0 0 auto' }],
+                  ring: [{ flex: '0 0 auto' }],
+                },
+              },
+              custom_fields: {
+                pill: { card: statusBadgeCard },
+                ring: { card: pingGaugeCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Header Card
+             * ------------------------------------------------------- */
+
+            const headerCard = {
+              ...baseCard,
+              entity: dlId,
+              tap_action: { action: 'none' },
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '28px 28px 0 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"title right" "stats right"' },
+                  { 'grid-template-columns': '1fr auto' },
+                  { 'align-items': 'flex-start' },
+                  { 'row-gap': '16px' },
+                ],
+                custom_fields: {
+                  title: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                  right: [{ 'justify-self': 'end' }, { 'align-self': 'flex-start' }],
+                  stats: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                },
+              },
+              custom_fields: {
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;text-align:left;">'
+                  + `<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">${roomName}</div>`
+                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);font-weight:400;margin-top:2px;">Internet · Network</div>'
+                  + `<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;margin-bottom:16px;">${advice}</div>`
+                  + '</div>',
+                right: { card: rightColCard },
+                stats: { card: statsWrapperCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Graph Card
+             * ------------------------------------------------------- */
+
+            const graphEntities = [
+              {
+                entity: dlId,
+                name: 'Download',
+                color: 'var(--hemma-badge-network-low-color, #44e371)',
+                color_thresholds: [
+                  { value: 0,  color: 'var(--hemma-badge-network-idle-color, #8e8e93)' },
+                  { value: 1,  color: 'var(--hemma-badge-network-low-color, #44e371)' },
+                  { value: 10, color: 'var(--hemma-badge-network-active-color, #ffd600)' },
+                  { value: 50, color: 'var(--hemma-badge-network-high-color, #ff9230)' },
+                ],
+              },
+            ];
+
+            if (ulId) {
+              graphEntities.push({
+                entity: ulId,
+                name: 'Upload',
+                color: 'var(--hemma-badge-network-active-color, #ffd600)',
+                color_thresholds: [
+                  { value: 0,  color: 'var(--hemma-badge-network-idle-color, #8e8e93)' },
+                  { value: 1,  color: 'var(--hemma-badge-network-low-color, #44e371)' },
+                  { value: 10, color: 'var(--hemma-badge-network-active-color, #ffd600)' },
+                  { value: 50, color: 'var(--hemma-badge-network-high-color, #ff9230)' },
+                ],
+                y_axis: 'secondary',
+              });
+            }
+
+            const graphCard = {
+              type: 'custom:mini-graph-card',
+              entities: graphEntities,
+              hours_to_show: 12,
+              points_per_hour: 2,
+              line_width: 3,
+              animate: true,
+              smoothing: true,
+              hour24: true,
+              height: 70,
+              decimals: 0,
+              show: {
+                name: false,
+                icon: false,
+                state: false,
+                legend: false,
+                labels: false,
+                fill: 'fade',
+                points: false,
+              },
+              card_mod: { style: graphStyle },
+            };
+
+            /* -------------------------------------------------------
+             * Tiles
+             * ------------------------------------------------------- */
+
+            const tileThresh = (val, maxScale) => {
+              if (val == null) {
+                return { label: '—', color: 'rgba(255,255,255,0.4)', pct: 0 };
+              }
+
+              if (val < 1) {
+                return {
+                  label: 'Idle',
+                  color: 'var(--hemma-badge-network-idle-color, #8e8e93)',
+                  pct: Math.min(100, (val / maxScale) * 100),
+                };
+              }
+
+              if (val < 10) {
+                return {
+                  label: 'Light',
+                  color: 'var(--hemma-badge-network-low-color, #44e371)',
+                  pct: Math.min(100, (val / maxScale) * 100),
+                };
+              }
+
+              if (val < 50) {
+                return {
+                  label: 'Active',
+                  color: 'var(--hemma-badge-network-active-color, #ffd600)',
+                  pct: Math.min(100, (val / maxScale) * 100),
+                };
+              }
+
+              return {
+                label: 'High',
+                color: 'var(--hemma-badge-network-high-color, #ff9230)',
+                pct: Math.min(100, (val / maxScale) * 100),
+              };
+            };
+
+            const makeTileCard = (entityId, maxScale) => {
+
+              const val = safeNum(entityId);
+
+              const st = tileThresh(val, maxScale);
+
+              const label =
+                friendlyName(entityId, 'Sensor');
+
+              const icon =
+                (
+                  entityId &&
+                  (
+                    states[entityId]?.attributes?.icon ||
+                    hass?.entities?.[entityId]?.icon
+                  )
+                ) || null;
+
+              const gradient =
+                val == null
+                  ? 'rgba(255,255,255,0.12)'
+
+                  : val < 1
+                    ? `
+                      linear-gradient(
+                        90deg,
+                        #8e8e93 0%,
+                        #b0b0b5 100%
+                      )
+                    `
+
+                    : val < 10
+                      ? `
+                        linear-gradient(
+                          90deg,
+                          #57FFFC 0%,
+                          #54F2A0 35%,
+                          #65F785 70%,
+                          #4CFA57 100%
+                        )
+                      `
+
+                      : val < 50
+                        ? `
+                          linear-gradient(
+                            90deg,
+                            #FFD166 0%,
+                            #FFB347 100%
+                          )
+                        `
+
+                        : `
+                          linear-gradient(
+                            90deg,
+                            #FF7A59 0%,
+                            #FF4D6D 100%
+                          )
+                        `;
+
+              const progressBar = `
+                <div style="
+                  position:relative;
+
+                  height:8px;
+                  width:100%;
+
+                  background:rgba(255,255,255,0.055);
+
+                  border-radius:999px;
+
+                  overflow:hidden;
+
+                  margin-top:10px;
+                ">
+
+                  ${
+                    val != null
+                      ? `
+                        <div style="
+                          position:absolute;
+                          inset:0 auto 0 0;
+
+                          width:${st.pct.toFixed(1)}%;
+
+                          border-radius:999px;
+
+                          background:${gradient};
+
+                          transition:
+                            width .35s ease;
+                        "></div>
+                      `
+                      : ''
+                  }
+
+                </div>
+              `;
+
+              const content = `
+                <div style="
+                  margin-top:1px;
+
+                  min-width:0;
+                  overflow:hidden;
+                ">
+
+                  <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+
+                    margin-bottom:8px;
+
+                    gap:8px;
+                  ">
+
+                    <div style="
+                      display:flex;
+                      align-items:center;
+                      gap:6px;
+
+                      min-width:0;
+                    ">
+
+                      ${icon ? `
+                        <ha-icon
+                          icon="${icon}"
+                          style="
+                            --mdc-icon-size:13px;
+
+                            width:13px;
+                            height:13px;
+
+                            display:inline-flex;
+                            align-items:center;
+                            justify-content:center;
+
+                            flex-shrink:0;
+
+                            color:rgba(255,255,255,0.52);
+                          "
+                        ></ha-icon>
+                      ` : ''}
+
+                      <span style="
+                        font-size:13px;
+                        color:rgba(255,255,255,0.88);
+
+                        font-weight:600;
+
+                        white-space:nowrap;
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+
+                        letter-spacing:.01em;
+                      ">
+                        ${label}
+                      </span>
+
+                    </div>
+
+                    <span style="
+                      font-size:13px;
+
+                      color:${
+                        val != null
+                          ? st.color
+                          : 'rgba(255,255,255,0.35)'
+                      };
+
+                      white-space:nowrap;
+
+                      font-weight:600;
+
+                      letter-spacing:.01em;
+
+                      flex-shrink:0;
+                    ">
+                      ${st.label}
+                    </span>
+
+                  </div>
+
+                  <div style="
+                    display:flex;
+                    align-items:baseline;
+
+                    gap:3px;
+                  ">
+
+                    <span style="
+                      font-size:20px;
+                      font-weight:400;
+
+                      color:${
+                        val != null
+                          ? '#ffffff'
+                          : 'rgba(255,255,255,0.35)'
+                      };
+
+                      line-height:1;
+
+                      white-space:nowrap;
+                    ">
+                      ${fmt(val, entityId)}
+                    </span>
+
+                    ${
+                      val != null
+                        ? `
+                          <span style="
+                            font-size:12px;
+                            color:rgba(255,255,255,0.55);
+
+                            white-space:nowrap;
+                          ">
+                            Mbit/s
+                          </span>
+                        `
+                        : ''
+                    }
+
+                  </div>
+
+                  ${progressBar}
+
+                </div>
+              `;
+
+              return {
+                ...baseCard,
+
+                entity: entityId || dlId,
+
+                tap_action:
+                  entityId
+                    ? { action: 'more-info' }
+                    : { action: 'none' },
+
+                card_mod: {
+                  style:
+                    entityId
+                      ? tileTapStyle
+                      : noHoverStyle,
+                },
+
+                styles: {
+                  card: [
+                    {
+                      background:'rgba(255,255,255,0.045)',
+                    },
+                    {
+                      border:'none',
+                    },
+                    {
+                      borderRadius:'24px',
+                    },
+                    {
+                      boxShadow:'none',
+                    },
+                    {
+                      backdropFilter:'none',
+                    },
+                    {
+                      WebkitBackdropFilter:'none',
+                    },
+                    {
+                      padding:'18px 18px 16px 18px',
+                    },
+                  ],
+
+                  grid: [
+                    {
+                      'grid-template-areas':'"c"',
+                    },
+                    {
+                      'grid-template-columns':'1fr',
+                    },
+                  ],
+
+                  custom_fields: {
+                    c: [
+                      {
+                        'justify-self':'stretch',
+                      },
+                    ],
+                  },
+                },
+
+                custom_fields: {
+                  c: content,
+                },
+              };
+            };
+
+            const tilesCard = {
+              ...baseCard,
+              entity: wiredDlId || dlId,
+              tap_action: { action: 'none' },
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '4px 28px 20px 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"wired_dl wifi_dl" "wired_ul wifi_ul"' },
+                  { 'grid-template-columns': '1fr 1fr' },
+                  { gap: '8px' },
+                  { 'align-items': 'start' },
+                ],
+                custom_fields: {
+                  wired_dl: [{ 'grid-area': 'wired_dl' }, { 'justify-self': 'stretch' }],
+                  wifi_dl: [{ 'grid-area': 'wifi_dl' }, { 'justify-self': 'stretch' }],
+                  wired_ul: [{ 'grid-area': 'wired_ul' }, { 'justify-self': 'stretch' }],
+                  wifi_ul: [{ 'grid-area': 'wifi_ul' }, { 'justify-self': 'stretch' }],
+                },
+              },
+              custom_fields: {
+                wired_dl: { card: makeTileCard(wiredDlId, 1000) },
+                wifi_dl: { card: makeTileCard(wifiDlId, 500) },
+                wired_ul: { card: makeTileCard(wiredUlId, 200) },
+                wifi_ul: { card: makeTileCard(wifiUlId, 200) },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Divider
+             * ------------------------------------------------------- */
+
+            const dividerCard = {
+              ...baseCard,
+              entity: dlId,
+              tap_action: { action: 'none' },
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0 28px' },
+                ],
+                grid: [{ 'grid-template-areas': '"d"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { d: [{ 'justify-self': 'stretch' }] },
+              },
+              custom_fields: {
+                d: '<div style="height:5px;background:rgba(255,255,255,0.07);border-radius:20px;"></div>',
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Final Stack
+             * ------------------------------------------------------- */
+
+            const _r = { type: 'vertical-stack', cards: [headerCard, graphCard, tilesCard] };
+            window._hc[_ck] = { h: _ch, r: _r };
+            return _r;
+          ]]]
+
+
+  icon_tap_action:
+    haptic: light
+    action: more-info

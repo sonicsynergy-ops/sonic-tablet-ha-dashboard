@@ -1,0 +1,1004 @@
+# Energy Popup
+hemma_popup_energy:
+  template:
+    - hemma_popup_base
+
+  variables:
+    room_name: Energy
+    entity_power: null
+    entity_usage_today: null
+    entity_usage_month: null
+    entity_cost_today: null
+    entity_cost_month: null
+
+  tap_action:
+    browser_mod:
+      data:
+        content: |
+          [[[
+            const safeNum = (id) => {
+              if (!id) return null;
+              const s = states[id] && states[id].state;
+              if (!s || s === 'unknown' || s === 'unavailable') return null;
+              const n = parseFloat(s);
+              return isNaN(n) ? null : n;
+            };
+
+            // Sensors report kWh
+            const fmtEnergy = (v) => {
+              if (v == null) return '—';
+              if (v < 1)   return v.toFixed(2);
+              if (v < 10)  return v.toFixed(1);
+              return Math.round(v).toString();
+            };
+
+            const fmtPower = (v) => v == null ? '—' : String(Math.round(v));
+
+            const powerId     = variables.entity_power || entity?.entity_id;
+            const todayId     = variables.entity_usage_today;
+            const monthId     = variables.entity_usage_month;
+            const costTodayId = variables.entity_cost_today;
+            const costMonthId = variables.entity_cost_month;
+
+            const costCurrency = (costTodayId && states[costTodayId]?.attributes?.unit_of_measurement)
+              || (costMonthId && states[costMonthId]?.attributes?.unit_of_measurement)
+              || '';
+            const fmtCost = (v) => v == null ? '' : `${costCurrency}${v.toFixed(2)}`;
+
+            const power      = safeNum(powerId);
+            const usageToday = safeNum(todayId);
+            const usageMonth = safeNum(monthId);
+            const costToday  = safeNum(costTodayId);
+            const costMonth  = safeNum(costMonthId);
+
+            const _ck = 'hemma_energy_' + (powerId || 'x');
+            const _ch = [power, usageToday, usageMonth, costToday, costMonth].join('|');
+            window._hc = window._hc || {};
+            if (window._hc[_ck]?.h === _ch) return window._hc[_ck].r;
+
+            let color = 'var(--hemma-popup-green-color, #67f5a0)';
+            let label = 'Idle';
+            if (power >= 3000) {
+              color = 'var(--hemma-popup-red-color, #ff453a)';
+              label = 'Extreme';
+            } else if (power >= 1000) {
+              color = 'var(--hemma-popup-orange-color, #ff9230)';
+              label = 'Heavy';
+            } else if (power >= 200) {
+              color = 'var(--hemma-popup-yellow-color, #ffd600)';
+              label = 'Normal';
+            }
+
+            // Status badge & gauge gradient
+            const statusGrad1 = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FF9230' : power >= 200 ? '#B8FF47' : '#57FFFC';
+            const statusGrad2 = power >= 3000 ? '#FF9230' : power >= 1000 ? '#FFD166' : power >= 200 ? '#FFD166' : '#67F5A0';
+            const statusGlow  = power >= 3000 ? 'rgba(255,69,58,0.28)' : power >= 1000 ? 'rgba(255,146,48,0.28)' : power >= 200 ? 'rgba(184,255,71,0.22)' : 'rgba(87,255,252,0.22)';
+            const gaugeGrad1  = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FFD166' : power >= 200 ? '#B8FF47' : '#57FFFC';
+            const gaugeGrad2  = power >= 3000 ? '#FF2D55' : power >= 1000 ? '#FF453A' : power >= 200 ? '#FFD166' : '#4CFA57';
+
+            const radius       = 42;
+            const circumference = 2 * Math.PI * radius;
+            const progress     = Math.min((power || 0) / 5000, 1);
+            const dashOffset   = circumference - (progress * circumference);
+
+            const roomName = variables.room_name || 'Energy';
+
+            /* -------------------------------------------------------
+             * Styles
+             * ------------------------------------------------------- */
+
+            const noHoverStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                pointer-events: none !important;
+                cursor: default !important;
+              }
+              ha-card:hover { box-shadow: none !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const wrapperStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                cursor: default !important;
+              }
+              ha-card:hover { box-shadow: none !important; }
+              ha-ripple { display: none !important; }
+            `;
+
+            const contentCardStyle = wrapperStyle + `@media (max-width: 600px) { ha-card { padding-left: 14px !important; padding-right: 14px !important; } }`;
+
+            const tileTapStyle = `
+              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
+              ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }
+              ha-card:hover { background: rgba(255,255,255,0.09) !important; transform: translateY(-1px) !important; }
+              ha-ripple { display: none !important; }
+              @keyframes energyFlow {
+                0%   { background-position: 200% 50%; }
+                100% { background-position: 0%   50%; }
+              }
+            `;
+
+            const tapStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+                pointer-events: auto !important;
+              }
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                overflow: visible !important;
+              }
+              ha-card #container {
+                transition: opacity 0.18s ease, filter 0.18s ease !important;
+              }
+              ha-card:hover #container {
+                filter: brightness(1.12) saturate(1.08) drop-shadow(0 0 10px rgba(255,255,255,0.05));
+              }
+              ha-ripple { display: none !important; }
+            `;
+
+            const graphStyle = `
+              :host {
+                --ha-card-box-shadow: none !important;
+                --button-card-box-shadow: none !important;
+                --button-card-box-shadow-hover: none !important;
+              }
+
+              ha-card {
+                background: transparent !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                overflow: hidden !important;
+                padding: 10px 0px 10px 0px !important;
+                --primary-color: transparent !important;
+              }
+
+              ha-card:hover {
+                box-shadow: none !important;
+                border-color: transparent !important;
+              }
+
+              .graph {
+                position: relative !important;
+                overflow: visible !important;
+              }
+
+              .graph__container {
+                overflow: visible !important;
+              }
+
+              .graph__container svg {
+                width: calc(100% + 60px) !important;
+                margin-left: -30px !important;
+                display: block !important;
+                overflow: visible !important;
+
+                -webkit-mask-image:
+                  linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.1) 13%, rgba(0,0,0,0.5) 23%, black 35%, black 65%, rgba(0,0,0,0.5) 77%, rgba(0,0,0,0.1) 87%, rgba(0,0,0,0) 93%, rgba(0,0,0,0) 100%),
+                  linear-gradient(to bottom, transparent 0%, black 12%, black 78%, transparent 100%);
+
+                mask-image:
+                  linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0.1) 13%, rgba(0,0,0,0.5) 23%, black 35%, black 65%, rgba(0,0,0,0.5) 77%, rgba(0,0,0,0.1) 87%, rgba(0,0,0,0) 93%, rgba(0,0,0,0) 100%),
+                  linear-gradient(to bottom, transparent 0%, black 12%, black 78%, transparent 100%);
+
+                -webkit-mask-composite: destination-in;
+                mask-composite: intersect;
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-size: 100% 100%;
+                mask-size: 100% 100%;
+              }
+
+              .graph__line {
+                opacity: 0.95;
+                filter: drop-shadow(0 0 3px rgba(255,255,255,0.06));
+              }
+
+              .graph__fill {
+                opacity: 0.42;
+              }
+
+              .graph.flex {
+                margin-left: 0px !important;
+                margin-right: 0px !important;
+                padding-bottom: 0px !important;
+              }
+
+              .graph__hover {
+                overflow: visible !important;
+                pointer-events: auto !important;
+              }
+
+              .graph__labels {
+                overflow: visible !important;
+                opacity: 0 !important;
+                transition: opacity 0.15s ease !important;
+              }
+
+              ha-card:hover .graph__labels {
+                opacity: 1 !important;
+              }
+
+              .graph__label {
+                left: auto !important;
+                right: 0 !important;
+                font-size: 11px !important;
+                font-weight: 500 !important;
+              }
+            `;
+
+            /* -------------------------------------------------------
+             * Status Badge
+             * ------------------------------------------------------- */
+
+            const statusBadgeCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              name: label,
+              tap_action: { action: 'more-info' },
+              show_icon: false,
+              show_name: true,
+              show_label: false,
+              show_state: false,
+              card_mod: {
+                style: [
+                  ':host {',
+                  '  --ha-card-box-shadow: none !important;',
+                  '  --button-card-box-shadow: none !important;',
+                  '  --button-card-box-shadow-hover: none !important;',
+                  '}',
+                  'ha-card {',
+                  `  background: linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 18%,transparent) 0%, color-mix(in srgb,${statusGrad2} 13%,transparent) 100%) !important;`,
+                  `  border: 1px solid color-mix(in srgb,${statusGrad1} 40%,transparent) !important;`,
+                  '  border-radius: 999px !important;',
+                  '  box-shadow: none !important;',
+                  '  backdrop-filter: none !important;',
+                  '  -webkit-backdrop-filter: none !important;',
+                  '  transition: background 0.2s ease, filter 0.2s ease !important;',
+                  '}',
+                  `ha-card:hover { box-shadow: none !important; background: linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 26%,transparent) 0%, color-mix(in srgb,${statusGrad2} 20%,transparent) 100%) !important; filter: brightness(1.15) saturate(1.08); }`,
+                  'ha-ripple { display: none !important; }',
+                ].join('\n'),
+              },
+              styles: {
+                card: [
+                  {
+                    background: `linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 18%,transparent) 0%, color-mix(in srgb,${statusGrad2} 13%,transparent) 100%)`
+                  },
+                  {
+                    border: `1px solid color-mix(in srgb,${statusGrad1} 40%,transparent)`
+                  },
+                  {
+                    'border-radius': '999px'
+                  },
+                  {
+                    'box-shadow': 'none'
+                  },
+                  {
+                    padding: '8px 15px'
+                  },
+                ],
+
+                name: [
+                  {
+                    'font-size': '15px'
+                  },
+                  {
+                    'font-weight': '500'
+                  },
+                  {
+                    color: color
+                  },
+                  {
+                    'white-space': 'nowrap'
+                  },
+                  {
+                    'font-family': 'var(--primary-font-family,system-ui)'
+                  },
+                ],
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Header Card
+             * ------------------------------------------------------- */
+
+            const makeHeaderStatCard = (entityId, label, kwhValue, costValue, side) => ({
+              type: 'custom:button-card',
+              entity: entityId || powerId,
+              tap_action: entityId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: entityId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }, { 'text-align': 'left' }],
+                custom_fields: { c: [{ 'justify-self': 'start' }] },
+              },
+              custom_fields: {
+                c: `<div style="text-align:left;${side === 'right' ? 'padding-right:6px;' : side === 'left' ? 'padding-left:6px;' : ''}">`
+                  + `<div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.06em;font-weight:500;">${label}</div>`
+                  + '<div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;">'
+                    + `<span style="font-size:22px;">${fmtEnergy(kwhValue)}</span>`
+                    + '<span style="font-size:13px;color:rgba(255,255,255,0.55);">kWh</span>'
+                  + '</div>'
+                  + (fmtCost(costValue) ? `<div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:5px;">${fmtCost(costValue)}</div>` : '')
+                + '</div>',
+              },
+            });
+
+            // Energy Usage
+            const statsWrapperCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [
+                  { display: 'flex' },
+                  { 'flex-direction': 'row' },
+                  { 'align-items': 'flex-start' },
+                  { 'justify-content': 'flex-start' },
+                  { gap: '0' },
+                ],
+                custom_fields: {
+                  today: [{ flex: '0 0 auto' }, { order: '1' }],
+                  div:   [{ flex: '0 0 auto' }, { 'align-self': 'stretch' }, { order: '2' }],
+                  month: [{ flex: '0 0 auto' }, { order: '3' }],
+                },
+              },
+              custom_fields: {
+                today: { card: makeHeaderStatCard(todayId, 'TODAY', usageToday, costToday, 'right') },
+                div:   '<div style="width:2px;height:100%;background:rgba(255,255,255,0.09);margin:0 12px;"></div>',
+                month: { card: makeHeaderStatCard(monthId, 'MONTH', usageMonth, costMonth, 'left') },
+              },
+            };
+
+            // Gauge Circle
+            const gaugeCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'more-info' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: tapStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '0' },
+                ],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'end' }] },
+              },
+              custom_fields: {
+                c: '<div style="position:relative;width:120px;height:120px;">'
+                  + `<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">`
+                    + '<defs>'
+                      + `<linearGradient id="gaugeGrad" x1="8" y1="50" x2="92" y2="50" gradientUnits="userSpaceOnUse">`
+                        + `<stop offset="0%" stop-color="${gaugeGrad1}"/>`
+                        + `<stop offset="100%" stop-color="${gaugeGrad2}"/>`
+                      + '</linearGradient>'
+                    + '</defs>'
+                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>`
+                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="url(#gaugeGrad)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"/>`
+                  + '</svg>'
+                  + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">'
+                    + '<div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.08em;font-weight:500;">WATT</div>'
+                    + `<div style="color:${color};font-size:28px;font-weight:600;line-height:1;">${fmtPower(power)}</div>`
+                    + '<div style="color:rgba(255,255,255,0.5);font-size:14px;margin-top:-4px;">W</div>'
+                  + '</div>'
+                  + '</div>',
+              },
+            };
+
+            // Right Column
+            const rightColCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [
+                  { display: 'flex' }, { 'flex-direction': 'column' }, { 'align-items': 'flex-end' }, { gap: '28px' },
+                ],
+                custom_fields: {
+                  pill: [{ flex: '0 0 auto' }],
+                  ring: [{ flex: '0 0 auto' }],
+                },
+              },
+              custom_fields: {
+                pill: { card: statusBadgeCard },
+                ring: { card: gaugeCard },
+              },
+            };
+
+            const headerCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: contentCardStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '28px 28px 0 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"title right" "stats right"' },
+                  { 'grid-template-columns': '1fr auto' },
+                  { 'align-items': 'flex-start' },
+                  { 'row-gap': '16px' },
+                ],
+                custom_fields: {
+                  title: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                  right: [{ 'justify-self': 'end' }, { 'align-self': 'flex-start' }],
+                  stats: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                },
+              },
+              custom_fields: {
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;text-align:left;">'
+                  + `<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">${roomName}</div>`
+                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:2px;">Power · Consumption</div>'
+                  + '<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;margin-bottom:16px;">Energy Usage</div>'
+                  + '</div>',
+                right: { card: rightColCard },
+                stats: { card: statsWrapperCard },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Graph Card
+             * ------------------------------------------------------- */
+
+            const graphColor =
+              power >= 3000 ? '#FF453A' :
+              power >= 1000 ? '#FF9230' :
+              power >= 200  ? '#FFD166' :
+              '#67F5A0';
+
+            const graphCard = {
+              type: 'custom:mini-graph-card',
+              entities: [{ entity: powerId, color: graphColor }],
+              hours_to_show: 12,
+              points_per_hour: 2,
+              line_width: 3,
+              smoothing: true,
+              animate: true,
+              hour24: true,
+              height: 70,
+              decimals: 0,
+              show: {
+                name: false,
+                icon: false,
+                state: false,
+                legend: false,
+                labels: true,
+                extrema: false,
+                fill: 'fade',
+                points: false,
+              },
+              card_mod: { style: graphStyle },
+            };
+
+            /* -------------------------------------------------------
+            * Stat Tiles
+            * ------------------------------------------------------- */
+
+            const makeStatCard = (
+              entityId,
+              name,
+              value,
+              unit,
+              subLabel,
+              statColor,
+              pct
+            ) => ({
+
+              type: 'custom:button-card',
+
+              entity: entityId || powerId,
+
+              tap_action:
+                entityId
+                  ? { action: 'more-info' }
+                  : { action: 'none' },
+
+              show_icon: false,
+              show_name: false,
+              show_label: false,
+              show_state: false,
+
+              card_mod: {
+                style:
+                  entityId
+                    ? tileTapStyle
+                    : noHoverStyle,
+              },
+
+              styles: {
+                card: [
+                  {
+                    background:'rgba(255,255,255,0.045)',
+                  },
+                  {
+                    border:'none',
+                  },
+                  {
+                    borderRadius:'24px',
+                  },
+                  {
+                    boxShadow:'none',
+                  },
+                  {
+                    backdropFilter:'none',
+                  },
+                  {
+                    WebkitBackdropFilter:'none',
+                  },
+                  {
+                    padding:'18px 18px 16px 18px',
+                  },
+                ],
+
+                grid: [
+                  {
+                    'grid-template-areas':'"c"',
+                  },
+                  {
+                    'grid-template-columns':'1fr',
+                  },
+                ],
+
+                custom_fields: {
+                  c: [
+                    {
+                      'justify-self':'stretch',
+                    },
+                  ],
+                },
+              },
+
+              custom_fields: {
+                c: `
+
+                  <div style="
+                    margin-top:1px;
+
+                    min-width:0;
+                    overflow:hidden;
+                  ">
+
+                    <div style="
+                      display:flex;
+                      justify-content:space-between;
+                      align-items:center;
+
+                      margin-bottom:8px;
+
+                      gap:8px;
+                    ">
+
+                      <span style="
+                        font-size:13px;
+
+                        color:rgba(255,255,255,0.88);
+
+                        font-weight:600;
+
+                        white-space:nowrap;
+                        overflow:hidden;
+                        text-overflow:ellipsis;
+
+                        letter-spacing:.01em;
+                      ">
+                        ${name}
+                      </span>
+
+                      ${
+                        subLabel
+                          ? `
+                            <span style="
+                              font-size:13px;
+
+                              color:${statColor};
+
+                              white-space:nowrap;
+
+                              font-weight:600;
+
+                              letter-spacing:.01em;
+
+                              flex-shrink:0;
+                            ">
+                              ${subLabel}
+                            </span>
+                          `
+                          : ''
+                      }
+
+                    </div>
+
+                    <div style="
+                      display:flex;
+                      align-items:baseline;
+
+                      gap:3px;
+                    ">
+
+                      <span style="
+                        font-size:20px;
+                        font-weight:400;
+
+                        color:#ffffff;
+
+                        line-height:1;
+
+                        white-space:nowrap;
+                      ">
+                        ${value}
+                      </span>
+
+                      <span style="
+                        font-size:12px;
+
+                        color:rgba(255,255,255,0.55);
+
+                        white-space:nowrap;
+                      ">
+                        ${unit}
+                      </span>
+
+                    </div>
+
+                    <div style="
+                      position:relative;
+
+                      height:8px;
+                      width:100%;
+
+                      background:rgba(255,255,255,0.055);
+
+                      border-radius:999px;
+
+                      overflow:hidden;
+
+                      margin-top:10px;
+                    ">
+
+                      <div style="
+                        position:absolute;
+                        inset:0 auto 0 0;
+
+                        width:${Math.max(
+                          0,
+                          Math.min(100, pct)
+                        ).toFixed(1)}%;
+
+                        border-radius:999px;
+
+                        background:
+                          ${
+
+                            /* -------------------------------------------
+                            * CURRENT LIVE POWER
+                            * ------------------------------------------- */
+
+                            name === 'Now'
+
+                              ? (
+
+                                power >= 3000
+
+                                  ? `
+                                    linear-gradient(
+                                      90deg,
+                                      #FF2D55 0%,
+                                      #FF453A 22%,
+                                      #FF7A59 44%,
+                                      #FF4D6D 66%,
+                                      #FF2D55 88%,
+                                      #FF2D55 100%
+                                    )
+                                  `
+
+                                  : power >= 1000
+
+                                    ? `
+                                      linear-gradient(
+                                        90deg,
+                                        #FF7A59 0%,
+                                        #FF9230 22%,
+                                        #FFD166 44%,
+                                        #FFB347 66%,
+                                        #FF7A59 88%,
+                                        #FF7A59 100%
+                                      )
+                                    `
+
+                                    : power >= 200
+
+                                      ? `
+                                        linear-gradient(
+                                          90deg,
+                                          #B8FF47 0%,
+                                          #D6FF47 50%,
+                                          #FFD166 100%
+                                        )
+                                      `
+
+                                      : `
+                                        linear-gradient(
+                                          90deg,
+                                          #57FFFC 0%,
+                                          #54F2A0 35%,
+                                          #65F785 70%,
+                                          #4CFA57 100%
+                                        )
+                                      `
+                              )
+
+                              /* -------------------------------------------
+                              * TODAY + MONTH DYNAMIC THRESHOLDS
+                              * ------------------------------------------- */
+
+                              : pct >= 85
+
+                                ? `
+                                  linear-gradient(
+                                    90deg,
+                                    #FF7A59 0%,
+                                    #FF4D6D 100%
+                                  )
+                                `
+
+                                : pct >= 45
+
+                                  ? `
+                                    linear-gradient(
+                                      90deg,
+                                      #FFD166 0%,
+                                      #FFB347 100%
+                                    )
+                                  `
+
+                                  : `
+                                    linear-gradient(
+                                      90deg,
+                                      #57FFFC 0%,
+                                      #54F2A0 35%,
+                                      #65F785 70%,
+                                      #4CFA57 100%
+                                    )
+                                  `
+                          };
+
+                        background-size: ${name === 'Now' && power >= 1000 ? '200% 100%' : 'auto'};
+                        animation: ${name === 'Now' && power >= 3000 ? 'energyFlow 2s linear infinite' : name === 'Now' && power >= 1000 ? 'energyFlow 3s linear infinite' : 'none'};
+                        transition:
+                          width .35s ease;
+                      "></div>
+
+                    </div>
+
+                  </div>
+                `,
+              },
+            });
+
+            // Tier-aware bar: Idle 0–25% | Normal 25–50% | Heavy 50–85% | Extreme 85–100%
+            const currentPct =
+              power == null ? 0 :
+              power >= 3000 ? Math.min(85 + ((power - 3000) / 2000) * 15, 100) :
+              power >= 1000 ? 50 + ((power - 1000) / 2000) * 35 :
+              power >= 200  ? 25 + ((power - 200)  / 800)  * 25 :
+              (power / 200) * 25;
+
+            const currentStat = makeStatCard(
+              powerId,
+              'Now',
+              fmtPower(power),
+              'W',
+              label,
+              color,
+              currentPct
+            );
+
+            const todayPct =
+              Math.min(
+                (usageToday || 0) / 50 * 100,
+                100
+              );
+
+            const monthPct =
+              Math.min(
+                (usageMonth || 0) / 1500 * 100,
+                100
+              );
+
+            const usageColor = (pct) => {
+
+              if (pct >= 85) {
+                return 'var(--hemma-popup-red-color, #ff453a)';
+              }
+
+              if (pct >= 45) {
+                return 'var(--hemma-popup-orange-color, #ff9230)';
+              }
+
+              return 'var(--hemma-popup-green-color, #67f5a0)';
+            };
+
+            const todayStat = makeStatCard(
+              todayId,
+              'Today',
+              fmtEnergy(usageToday),
+              'kWh',
+              fmtCost(costToday),
+              usageColor(todayPct),
+              todayPct
+            );
+
+            const monthStat = makeStatCard(
+              monthId,
+              'Month',
+              fmtEnergy(usageMonth),
+              'kWh',
+              fmtCost(costMonth),
+              usageColor(monthPct),
+              monthPct
+            );
+
+            const isMobile =
+              typeof window !== 'undefined' &&
+              window.innerWidth <= 600;
+
+            const statsCard = {
+              type: 'custom:button-card',
+
+              entity: powerId,
+
+              tap_action: {
+                action: 'none',
+              },
+
+              show_icon: false,
+              show_name: false,
+              show_label: false,
+              show_state: false,
+
+              card_mod: {
+                style: contentCardStyle,
+              },
+
+              styles: {
+                card: [
+                  {
+                    background: 'transparent',
+                  },
+                  {
+                    border: 'none',
+                  },
+                  {
+                    'box-shadow': 'none',
+                  },
+                  {
+                    padding: '4px 28px 20px 28px',
+                  },
+                ],
+
+                grid: [
+                  {
+                    'grid-template-areas':
+                      isMobile
+                        ? '"stat1 stat2" "stat3 stat3"'
+                        : '"stat1 stat2 stat3"',
+                  },
+                  {
+                    'grid-template-columns':
+                      isMobile
+                        ? '1fr 1fr'
+                        : 'repeat(3, 1fr)',
+                  },
+                  {
+                    gap: '8px',
+                  },
+                  {
+                    'align-items': 'start',
+                  },
+                ],
+
+                custom_fields: {
+                  stat1: [
+                    {
+                      'justify-self': 'stretch',
+                    },
+                  ],
+
+                  stat2: [
+                    {
+                      'justify-self': 'stretch',
+                    },
+                  ],
+
+                  stat3: [
+                    {
+                      'justify-self': 'stretch',
+                    },
+                  ],
+                },
+              },
+
+              custom_fields: {
+                stat1: {
+                  card: currentStat,
+                },
+
+                stat2: {
+                  card: todayStat,
+                },
+
+                stat3: {
+                  card: monthStat,
+                },
+              },
+            };
+
+            const _r = {
+              type: 'vertical-stack',
+              cards: [
+                headerCard,
+                graphCard,
+                statsCard,
+              ],
+            };
+
+            window._hc[_ck] = {
+              h: _ch,
+              r: _r,
+            };
+
+            return _r;
+          ]]]
+
+
+  icon_tap_action:
+    haptic: light
+    action: more-info

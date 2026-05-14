@@ -1,0 +1,89 @@
+# hemma_battery
+# Displays an overall battery health status card and a tap-to-open popup
+# listing all battery sensors with individual charge bars.
+#
+# Required:
+#   entity — any battery sensor (e.g. sensor.my_device_battery).
+#             It is NOT displayed; button-card needs it as a reactivity
+#             anchor so the card re-renders when states change.
+#             Pick any battery sensor that updates regularly.
+#
+# Optional variables:
+#   entity_filter — list of entity_ids to restrict which batteries are shown.
+#                   Omit to show ALL battery-class sensors in your system.
+#   room_name     — label shown in the popup header (default: "Devices").
+hemma_battery:
+  template:
+    - hemma_entity
+    - hemma_popup_battery
+
+  variables:
+    icon: battery
+    entity_filter: null
+
+  hold_action:
+    action: more-info
+
+  state_display: |
+    [[[
+      const filterList = variables.entity_filter;
+      const batteries = Object.values(states).filter(e => {
+        if (e.state === 'unavailable' || e.state === 'unknown') return false;
+        const pct = parseFloat(e.state);
+        if (isNaN(pct)) return false;
+        const inFilter = !filterList || filterList.includes(e.entity_id);
+        return e.attributes.device_class === 'battery' && inFilter;
+      });
+      if (batteries.length === 0) return 'No Sensors';
+      const anyLow = batteries.some(e => parseFloat(e.state) <= 40);
+      return anyLow ? 'Needs Attention' : 'Healthy';
+    ]]]
+
+  state:
+    - operator: template
+      value: |
+        [[[
+          const filterList = variables.entity_filter;
+          return Object.values(states).some(e => {
+            if (e.state === 'unavailable' || e.state === 'unknown') return false;
+            const pct = parseFloat(e.state);
+            if (isNaN(pct)) return false;
+            const inFilter = !filterList || filterList.includes(e.entity_id);
+            return e.attributes.device_class === 'battery' && inFilter && pct <= 40;
+          });
+        ]]]
+      styles:
+        card:
+          - background: var(--hemma-entity-background-active)
+          - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
+        name:
+          - color: var(--hemma-entity-name-active, var(--primary-text-color))
+        state:
+          - color: var(--hemma-entity-state-active-color)
+        img_cell:
+          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
+          - filter: var(--hemma-entity-picture-active-filter, none) !important
+        entity_picture:
+          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
+          - filter: var(--hemma-entity-picture-active-filter, none) !important
+
+  extra_styles: |
+    @media (hover: hover) {
+      #img-cell:hover {
+        transform: scale(1.05);
+        transition: transform 0.15s ease;
+      }
+      #img-cell:hover img {
+        opacity: 1 !important;
+        filter: brightness(1.2) !important;
+      }
+    }
+    @media (hover: none) {
+      #img-cell:active {
+        transform: scale(1.05);
+      }
+      #img-cell:active img {
+        opacity: 1 !important;
+        filter: brightness(1.2) !important;
+      }
+    }

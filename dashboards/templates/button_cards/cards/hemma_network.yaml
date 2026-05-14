@@ -16,6 +16,7 @@
 hemma_network:
   template:
     - hemma_entity
+    - hemma_popup_network
 
   variables:
     upload_sensor: null
@@ -23,29 +24,28 @@ hemma_network:
     idle_threshold: 1
     light_threshold: 10
     heavy_threshold: 50
+    room_name: null
+    entity_download: null
+    entity_upload: null
+    entity_ping: null
+    entity_status: null
+    entity_stat_1: null
+    entity_stat_2: null
+    entity_stat_3: null
+    entity_stat_4: null
 
   triggers_update:
-    - '[[[ return variables.upload_sensor || "" ]]]'
-
-  tap_action:
-    action: more-info
-    entity: >
-      [[[
-        const dl = parseFloat(entity?.state);
-        const ul = parseFloat(states[variables.upload_sensor]?.state);
-        return (Number.isFinite(ul) && ul > dl && variables.upload_sensor)
-          ? variables.upload_sensor
-          : entity.entity_id;
-      ]]]
+    - '[[[ return variables.entity_upload || variables.upload_sensor || "" ]]]'
 
   icon_tap_action:
     action: more-info
     entity: >
       [[[
+        const ulId = variables.entity_upload || variables.upload_sensor;
         const dl = parseFloat(entity?.state);
-        const ul = parseFloat(states[variables.upload_sensor]?.state);
-        return (Number.isFinite(ul) && ul > dl && variables.upload_sensor)
-          ? variables.upload_sensor
+        const ul = parseFloat(states[ulId]?.state);
+        return (Number.isFinite(ul) && ul > dl && ulId)
+          ? ulId
           : entity.entity_id;
       ]]]
 
@@ -53,18 +53,21 @@ hemma_network:
     action: more-info
     entity: >
       [[[
+        const ulId = variables.entity_upload || variables.upload_sensor;
         const dl = parseFloat(entity?.state);
-        const ul = parseFloat(states[variables.upload_sensor]?.state);
-        return (Number.isFinite(ul) && ul > dl && variables.upload_sensor)
-          ? variables.upload_sensor
+        const ul = parseFloat(states[ulId]?.state);
+        return (Number.isFinite(ul) && ul > dl && ulId)
+          ? ulId
           : entity.entity_id;
       ]]]
 
   # Idle · Light Downloads/Uploads · Active Downloads/Uploads · Heavy Downloads/Uploads
   state_display: >
     [[[
-      const dl   = parseFloat(entity?.state);
-      const ul   = parseFloat(states[variables.upload_sensor]?.state);
+      const dlId = variables.entity_download || entity?.entity_id;
+      const ulId = variables.entity_upload   || variables.upload_sensor || null;
+      const dl   = parseFloat(states[dlId]?.state);
+      const ul   = parseFloat(ulId ? states[ulId]?.state : null);
       const dlOk = Number.isFinite(dl);
       const ulOk = Number.isFinite(ul);
       const max  = Math.max(dlOk ? dl : 0, ulOk ? ul : 0);
@@ -108,7 +111,7 @@ hemma_network:
       value: |
         [[[
           const dl    = parseFloat(entity?.state);
-          const ul    = parseFloat(states[variables.upload_sensor]?.state);
+          const ul    = parseFloat(states[variables.entity_upload || variables.upload_sensor]?.state);
           const max   = Math.max(Number.isFinite(dl) ? dl : 0, Number.isFinite(ul) ? ul : 0);
           const heavy = Number(variables.heavy_threshold ?? 50);
           return max >= heavy;
@@ -131,7 +134,7 @@ hemma_network:
       value: |
         [[[
           const dl    = parseFloat(entity?.state);
-          const ul    = parseFloat(states[variables.upload_sensor]?.state);
+          const ul    = parseFloat(states[variables.entity_upload || variables.upload_sensor]?.state);
           const max   = Math.max(Number.isFinite(dl) ? dl : 0, Number.isFinite(ul) ? ul : 0);
           const light = Number(variables.light_threshold ?? 10);
           return max >= light;

@@ -253,8 +253,8 @@ hemma_entity:
         const size = isMobile ? 28 : 36;
 
         return `<svg width="${size}" height="${size}" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(-90deg);display:block;">
-          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="7" stroke-linecap="round"/>
-          <circle class="hemma-progress-arc" cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="7" stroke-linecap="round" stroke-dasharray="87.965"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="7" stroke-linecap="round"/>
+          <circle class="hemma-progress-arc" cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="7" stroke-linecap="round" stroke-dasharray="87.965"/>
         </svg>`;
       ]]]
 

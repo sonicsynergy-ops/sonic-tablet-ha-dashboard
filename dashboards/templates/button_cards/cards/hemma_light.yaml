@@ -55,7 +55,13 @@ hemma_light:
       data:
         title: ""
         style: |
+          backdrop-filter: none !important;
+          box-shadow: none !important;
+          -webkit-backdrop-filter: none !important;
           --popup-min-width: 800px;
+          --ha-card-background: transparent;
+          --ha-card-box-shadow: none !important;
+          --button-card-box-shadow-hover: none !important;
         popup_styles:
           - style: all
             styles: |
@@ -66,19 +72,6 @@ hemma_light:
         content:
           type: custom:layout-card
           layout_type: custom:grid-layout
-          card_mod:
-            style: |
-              ha-card,
-              ha-card:hover,
-              ha-card:focus-within,
-              ha-card:active {
-                background: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                filter: none !important;
-              }
           layout:
             grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.05fr)
             grid-template-rows: auto
@@ -90,23 +83,16 @@ hemma_light:
             - type: custom:more-info-card
               view_layout:
                 grid-area: main
-              entity: "[[[ return entity.entity_id ]]]"
+              entity: '[[[ return entity.entity_id ]]]'
               card_mod:
                 style:
-                  $: |
-                    h1.card-header {
-                      display: block !important;
-                      margin: 0 !important;
-                      padding: 8px 0 24px 0 !important;
-                      width: 100% !important;
-                      text-align: center !important;
-                      font-size: 32px !important;
-                      font-weight: 600 !important;
-                      line-height: 1.2 !important;
-                      color: var(--primary-text-color) !important;
-                    }
-
                   .: |
+                    :host {
+                      --ha-card-background: transparent !important;
+                      --ha-card-box-shadow: none !important;
+                      --ha-card-backdrop-filter: none !important;
+                      --button-card-box-shadow-hover: none !important;
+                    }
                     ha-card,
                     ha-card:hover,
                     ha-card:focus-within,
@@ -114,32 +100,27 @@ hemma_light:
                       background: transparent !important;
                       border: none !important;
                       box-shadow: none !important;
-                      filter: none !important;
                       backdrop-filter: none !important;
                       -webkit-backdrop-filter: none !important;
-                      transform: none !important;
+                      filter: none !important;
+                      --ha-card-background: transparent !important;
+                      --ha-card-box-shadow: none !important;
+                      --ha-card-backdrop-filter: none !important;
+                      --button-card-box-shadow-hover: none !important;
                     }
-
                     state-card-content,
                     div.action {
                       display: none !important;
                     }
-
-                    more-info-content {
-                      opacity: 0;
-                      animation: revealMoreInfo 0s linear 0.5s forwards;
+                  $: |
+                    h1.card-header {
+                      text-align: center !important;
                     }
-
-                    @keyframes revealMoreInfo {
-                      to { opacity: 1; }
+                  more-info-content $: |
+                    hui-section,
+                    hui-grid-section {
+                      display: none !important;
                     }
-
-                  more-info-content:
-                    $: |
-                      hui-section,
-                      hui-grid-section {
-                        display: none !important;
-                      }
 
             - type: vertical-stack
               view_layout:
@@ -185,6 +166,7 @@ hemma_light:
                     primary_info: 'name',
                     secondary_info: 'state',
                     icon_type: 'icon',
+                    use_light_color: true,
                     show_brightness_control: true,
                     show_color_temp_control: true,
                     show_color_control: true,
@@ -196,7 +178,11 @@ hemma_light:
                     card_mod: {
                       style: `
                         ha-card {
+                          --ha-card-box-shadow: none !important;
+                          --button-card-box-shadow: none !important;
+                          --button-card-box-shadow-hover: none !important;
                           background: var(--hemma-popup-entity-background, rgba(0, 0, 0, 0.4)) !important;
+                          border: none !important;
                           box-shadow: none !important;
                           border-radius: 9999px !important;
                           margin-bottom: 8px !important;
@@ -208,9 +194,14 @@ hemma_light:
                         ha-card:hover,
                         ha-card:focus-within,
                         ha-card:active {
+                          --ha-card-box-shadow: none !important;
+                          --button-card-box-shadow: none !important;
+                          --button-card-box-shadow-hover: none !important;
                           background: var(--hemma-popup-entity-hover, rgba(0, 0, 0, 0.5)) !important;
                           border-color: rgba(255, 255, 255, 0.08) !important;
                           box-shadow: none !important;
+                          filter: none !important;
+                          transform: none !important;
                         }
                       `
                     }

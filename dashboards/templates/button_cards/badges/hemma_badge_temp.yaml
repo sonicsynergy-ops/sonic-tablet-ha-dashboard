@@ -11,10 +11,7 @@ hemma_badge_temp:
     entity_quality: null
     entity_temp: null
     entity_humidity: null
-    entity_pm25: null
-    entity_pm10: null
-    entity_voc: null
-    entity_co2: null
+    sensors: null
 
   icon: mdi:thermometer
 

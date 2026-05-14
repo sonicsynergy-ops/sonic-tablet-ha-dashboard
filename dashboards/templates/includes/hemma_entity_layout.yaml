@@ -58,7 +58,7 @@ mediaquery:
 
   # -------- Mobile Landscape --------
   "(max-height: 600px) and (orientation: landscape)":
-    position: relative
+    position: absolute
     z-index: 4
     inset: >
       calc(var(--hemma-tiles-top-landscape, calc(env(safe-area-inset-top, 0px) + 105px)))

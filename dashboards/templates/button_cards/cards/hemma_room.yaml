@@ -762,10 +762,10 @@ hemma_room:
               entity_quality: '[[[ return variables.quality_sensor ]]]'
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
 
           - type: custom:button-card
             template: hemma_badge_humidity
@@ -776,10 +776,10 @@ hemma_room:
               entity_quality: '[[[ return variables.quality_sensor ]]]'
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
 
           - type: custom:button-card
             template: hemma_badge_air_quality
@@ -788,10 +788,10 @@ hemma_room:
               enabled: '[[[ return !!(variables.show_climate && variables.show_climate_inline && variables.quality_sensor) ]]]'
               room_name: '[[[ return variables.aqi_room_name ]]]'
               entity_quality: '[[[ return variables.quality_sensor ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
 
@@ -873,10 +873,10 @@ hemma_room:
               entity_quality: '[[[ return variables.quality_sensor ]]]'
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
 
           - type: custom:button-card
             template: hemma_badge_humidity
@@ -887,10 +887,10 @@ hemma_room:
               entity_quality: '[[[ return variables.quality_sensor ]]]'
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
 
           - type: custom:button-card
             template: hemma_badge_air_quality
@@ -899,10 +899,10 @@ hemma_room:
               enabled: '[[[ return variables.show_climate && !!variables.quality_sensor ]]]'
               room_name: '[[[ return variables.aqi_room_name ]]]'
               entity_quality: '[[[ return variables.quality_sensor ]]]'
-              entity_pm25: '[[[ return variables.aqi_entity_pm25 ]]]'
-              entity_pm10: '[[[ return variables.aqi_entity_pm10 ]]]'
-              entity_voc: '[[[ return variables.aqi_entity_voc ]]]'
-              entity_co2: '[[[ return variables.aqi_entity_co2 ]]]'
+              sensors: >-
+                [[[
+                  return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
+                ]]]
               entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
               entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
 

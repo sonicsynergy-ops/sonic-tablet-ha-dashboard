@@ -16,7 +16,6 @@ Hemma:
       sidebar-background-color: var(--ha-card-background)
       sidebar-icon-color: var(--text-primary-color)
       sidebar-text-color: "#c9c9c9"
-
       # ============================================================================
       # MODE: LIGHT — ENTITY TOKENS
       # ============================================================================
@@ -91,7 +90,9 @@ Hemma:
       ha-color-form-background-disabled: var(--ha-card-background)
       ha-color-form-background-hover: var(--ha-card-background)
       ha-color-text-secondary: var(--secondary-text-color)
+      ha-color-fill-neutral-quiet-resting: transparent
       wa-color-text-quiet: var(--secondary-text-color)
+      ha-tooltip-text-color: black
 
       mdc-text-field-fill-color: rgba(50,50,50,0.4)
       mdc-select-fill-color: rgba(50,50,50,0.4)
@@ -195,6 +196,7 @@ Hemma:
       ha-color-form-background-disabled: var(--ha-card-background)
       ha-color-form-background-hover: var(--ha-card-background)
       ha-color-text-secondary: var(--secondary-text-color)
+      ha-color-fill-neutral-quiet-resting: transparent
       wa-color-text-quiet: var(--secondary-text-color)
 
       mdc-text-field-fill-color: var(--primary-background-color)
@@ -292,6 +294,7 @@ Hemma:
   ha-color-red-40: "#d6314a"
   ha-color-primary-95: "#9c9c9c"
   ha-color-neutral-90: transparent
+  state-vacuum-cleaning-color: "#ffffff"
 
   # ============================================================================
   # SIDEBAR
@@ -598,13 +601,51 @@ Hemma:
   hemma-badge-temp-warm-color: "#ffd600"
   hemma-badge-temp-hot-color: "#ff9230"
   hemma-badge-temp-very-hot-color: "#ff4245"
+  hemma-badge-air-quality-excellent-color: "#67f5a0"
   hemma-badge-air-quality-good-color: "#44e371"
   hemma-badge-air-quality-moderate-color: "#ffd600"
+  hemma-badge-air-quality-poor-color: "#ff9230"
+  hemma-badge-air-quality-bad-color: "#ff4245"
+  hemma-badge-plant-healthy-color: "#44e371"
+  hemma-badge-plant-care-color: "#ffd600"
+  hemma-badge-plant-struggling-color: "#ff9230"
+  hemma-badge-plant-critical-color: "#ff4245"
   hemma-badge-humidity-dry-color: "#ffb254"
   hemma-badge-humidity-high-color: "#3cd3fe"
   hemma-badge-presence-home-color: "#49F08CD9"
   hemma-badge-presence-away-color: "#ffd600"
   hemma-badge-media-color: "#ff4d70"
+  hemma-badge-network-online-color: "#44e371"
+  hemma-badge-network-offline-color: "#ff453a"
+  hemma-badge-network-idle-color: "#8e8e93"
+  hemma-badge-network-low-color: "#44e371"
+  hemma-badge-network-active-color: "#ffd600"
+  hemma-badge-network-high-color: "#ff9230"
+  hemma-badge-network-ping-good-color: "#44e371"
+  hemma-badge-network-ping-moderate-color: "#ffd600"
+  hemma-badge-network-ping-bad-color: "#ff453a"
+  hemma-badge-energy-low-color: "#44e371"
+  hemma-badge-energy-medium-color: "#ffd600"
+  hemma-badge-energy-high-color: "#ff9230"
+  hemma-badge-energy-very-high-color: "#ff453a"
+  hemma-badge-battery-critical-color: "#ff453a"
+  hemma-badge-battery-very-low-color: "#ff6b30"
+  hemma-badge-battery-low-color: "#ffd600"
+  hemma-badge-battery-good-color: "#44e371"
+
+  # ============================================================================
+  # ENTITY POPUP COLORS
+  # ============================================================================
+
+  hemma-popup-primary-color: '#00c3d0'
+  hemma-popup-yellow-color: '#ffd600'
+  hemma-popup-green-color: '#67f5a0'
+  hemma-popup-orange-color: '#ff9230'
+  hemma-popup-red-color: '#ff4245'
+  hemma-popup-text-primary: '#ffffff'
+  hemma-popup-text-secondary: 'rgba(255,255,255,0.6)'
+  hemma-popup-text-muted: 'rgba(255,255,255,0.45)'
+  hemma-popup-divider: 'rgba(255,255,255,0.07)'
 
   # ============================================================================
   # ENTITY STATE COLORS
@@ -764,7 +805,6 @@ Hemma:
         --hemma-header-offset: var(--app-header-height, var(--header-height, 0px));
         color-scheme: dark;
       }
-
 
       body.kiosk-mode,
       ha-panel-lovelace.kiosk-mode,
@@ -1106,6 +1146,14 @@ Hemma:
         }
       }
 
+      /* Hide scrollbar in browser-mod popups (light-DOM cascade) */
+      browser-mod-popup {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      browser-mod-popup::-webkit-scrollbar {
+        display: none !important;
+      }
 
     ha-more-info-dialog: |
       :host {
@@ -1129,7 +1177,6 @@ Hemma:
 
     ha-adaptive-dialog: |
       wa-drawer,
-      wa-popup,
       wa-dialog {
         --wa-color-fill-loud: var(--primary-text-color, white);
         --wa-color-neutral-fill-loud: var(--primary-text-color, white);
@@ -1158,6 +1205,19 @@ Hemma:
         #view::-webkit-scrollbar {
           display: none !important;
         }
+      }
+
+    browser-mod-popup: |
+      :host {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      :host::-webkit-scrollbar {
+        display: none !important;
+      }
+      ha-dialog {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
       }
 
   card-mod-sidebar-yaml: |

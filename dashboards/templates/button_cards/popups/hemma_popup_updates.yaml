@@ -1,0 +1,245 @@
+# Updates Popup
+hemma_popup_updates:
+  template:
+    - hemma_popup_base
+
+  tap_action:
+    browser_mod:
+      data:
+        content: |
+          [[[
+            const updates = Object.values(states)
+              .filter(e => e.entity_id.startsWith('update.') && e.state === 'on')
+              .sort((a, b) =>
+                (a.attributes.friendly_name || a.entity_id)
+                  .localeCompare(b.attributes.friendly_name || b.entity_id)
+              );
+
+            const count      = updates.length;
+            const hasUpdates = count > 0;
+            const statusColor  = hasUpdates ? 'var(--hemma-popup-primary-color, #00c3d0)' : 'var(--hemma-popup-green-color, #67f5a0)';
+            const statusGrad1  = hasUpdates ? '#00c3d0' : '#57FFFC';
+            const statusGrad2  = hasUpdates ? '#0099D8' : '#67F5A0';
+            const statusGlow   = hasUpdates ? 'rgba(0,195,208,0.25)' : 'rgba(87,255,252,0.22)';
+            const statusLabel = hasUpdates ? count + ' available' : 'Up to date';
+            const advice      = hasUpdates ? 'Available Updates' : 'Everything is up to date';
+
+            const noHoverStyle = [
+              ':host {',
+              '  --ha-card-box-shadow: none !important;',
+              '  --button-card-box-shadow: none !important;',
+              '  --button-card-box-shadow-hover: none !important;',
+              '}',
+              'ha-card {',
+              '  background: transparent !important;',
+              '  border: none !important;',
+              '  box-shadow: none !important;',
+              '  backdrop-filter: none !important;',
+              '  -webkit-backdrop-filter: none !important;',
+              '}',
+              'ha-card:hover {',
+              '  box-shadow: none !important;',
+              '  border-color: transparent !important;',
+              '}',
+              'ha-ripple { display: none !important; }',
+            ].join('\n');
+
+            const tileTapStyle = [
+              ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+              'ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }',
+              'ha-card:hover { background: rgba(255,255,255,0.09) !important; }',
+              'ha-ripple { display: none !important; }',
+            ].join('\n');
+
+            // Badge Pill
+            const badgePillCard = {
+              type: 'custom:button-card',
+              entity: entity?.entity_id,
+              name: statusLabel,
+              tap_action: hasUpdates ? { action: 'navigate', navigation_path: '/config/updates' } : { action: 'none' },
+              show_icon: false, show_name: true, show_label: false, show_state: false,
+              card_mod: {
+                style: [
+                  ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                  'ha-card { background: linear-gradient(135deg, color-mix(in srgb,' + statusGrad1 + ' 18%,transparent) 0%, color-mix(in srgb,' + statusGrad2 + ' 13%,transparent) 100%) !important; border: 1px solid color-mix(in srgb,' + statusGrad1 + ' 40%,transparent) !important; border-radius: 999px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transition: background 0.2s ease, filter 0.2s ease !important; }',
+                  'ha-card:hover { box-shadow: none !important; background: linear-gradient(135deg, color-mix(in srgb,' + statusGrad1 + ' 26%,transparent) 0%, color-mix(in srgb,' + statusGrad2 + ' 20%,transparent) 100%) !important;' + (hasUpdates ? ' filter: brightness(1.12) saturate(1.06);' : '') + ' }',
+                  'ha-ripple { display: none !important; }',
+                ].join('\n'),
+              },
+              styles: {
+                card: [
+                  { background: 'linear-gradient(135deg, color-mix(in srgb,' + statusGrad1 + ' 18%,transparent) 0%, color-mix(in srgb,' + statusGrad2 + ' 13%,transparent) 100%)' },
+                  { border: '1px solid color-mix(in srgb,' + statusGrad1 + ' 40%,transparent)' },
+                  { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 13px' },
+                ],
+                name: [
+                  { 'font-size': '15px' }, { 'font-weight': '500' }, { color: statusColor },
+                  { 'white-space': 'nowrap' }, { 'font-family': 'var(--primary-font-family,system-ui)' },
+                ],
+              },
+            };
+
+            // Header
+            const headerCard = {
+              type: 'custom:button-card',
+              entity: entity?.entity_id,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '28px 28px 0 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': '"title badge"' },
+                  { 'grid-template-columns': '1fr auto' },
+                  { 'align-items': 'flex-start' },
+                ],
+                custom_fields: {
+                  title: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                  badge: [{ 'justify-self': 'end' }, { 'align-self': 'flex-start' }],
+                },
+              },
+              custom_fields: {
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;">'
+                  + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">System</div>'
+                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);font-weight:400;">Updates · Software</div>'
+                + '</div>',
+                badge: { card: badgePillCard },
+              },
+            };
+
+            // Advice Text
+            const adviceCard = {
+              type: 'custom:button-card',
+              entity: entity?.entity_id,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '20px 28px 18px 28px' },
+                ],
+                grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { body: [{ 'justify-self': 'stretch' }, { width: '100%' }, { 'text-align': 'left' }] },
+              },
+              custom_fields: {
+                body: '<div style="font-family:var(--primary-font-family,system-ui);">'
+                  + '<div style="font-size:22px;color:var(--primary-text-color,#e4e7eb);font-weight:400;letter-spacing:-.5px;">' + advice + '</div>'
+                + '</div>',
+              },
+            };
+
+            // Update Tile Factory
+            const makeUpdateTileCard = (e) => {
+              const name      = (e.attributes.friendly_name || e.entity_id)
+                .replace(/ Update$/i, '')
+                .replace(/ Firmware$/i, '');
+              const installed = e.attributes.installed_version || '—';
+              const latest    = e.attributes.latest_version    || '—';
+              const inProg    = e.attributes.in_progress === true;
+              const nameColor   = inProg ? 'rgba(255,255,255,0.4)' : '#ffffff';
+              const latestColor = inProg ? 'rgba(68,152,195,0.4)'  : 'var(--hemma-popup-primary-color, #00c3d0)';
+              const pillBg      = inProg ? 'rgba(68,152,195,0.35)' : 'var(--hemma-popup-primary-color, #00c3d0)';
+              const pillColor   = inProg ? 'rgba(255,255,255,0.55)': '#ffffff';
+              const pillLabel   = inProg ? 'Updating…'             : 'Details';
+
+              const pillCard = {
+                type: 'custom:button-card',
+                entity: e.entity_id,
+                name: pillLabel,
+                tap_action: inProg ? { action: 'none' } : { action: 'more-info' },
+                show_icon: false, show_name: true, show_label: false, show_state: false,
+                card_mod: {
+                  style: [
+                    ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                    'ha-card { background: ' + pillBg + ' !important; border: none !important; border-radius: 999px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transition: background 0.2s ease, opacity 0.2s ease !important; }',
+                    'ha-card:hover { box-shadow: none !important; background: ' + (inProg ? 'rgba(68,152,195,0.35)' : 'color-mix(in srgb, var(--hemma-popup-primary-color, #00c3d0) 75%, #000000)') + ' !important; }',
+                    'ha-ripple { display: none !important; }',
+                  ].join('\n'),
+                },
+                styles: {
+                  card: [
+                    { background: pillBg }, { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '12px 20px' },
+                  ],
+                  name: [
+                    { 'font-size': '14px' }, { 'font-weight': '600' }, { color: pillColor },
+                    { 'white-space': 'nowrap' }, { 'letter-spacing': '0.01em' },
+                  ],
+                },
+              };
+
+              return {
+                type: 'custom:button-card',
+                entity: e.entity_id,
+                tap_action: inProg ? { action: 'none' } : { action: 'more-info' },
+                show_icon: false, show_name: false, show_label: false, show_state: false,
+                card_mod: { style: inProg ? noHoverStyle : tileTapStyle },
+                styles: {
+                  card: [
+                    { background: 'rgba(255,255,255,0.07)' }, { border: 'none' }, { 'border-radius': '24px' },
+                    { 'box-shadow': 'none' }, { padding: '16px 16px 16px 20px' },
+                  ],
+                  grid: [
+                    { 'grid-template-areas': '"body update"' },
+                    { 'grid-template-columns': '1fr auto' },
+                    { 'align-items': 'center' },
+                  ],
+                  custom_fields: {
+                    body:   [{ 'justify-self': 'stretch' }, { 'text-align': 'left' }, { 'min-width': '0' }, { overflow: 'hidden' }],
+                    update: [{ 'justify-self': 'end' }, { 'align-self': 'center' }],
+                  },
+                },
+                custom_fields: {
+                  body: '<div style="font-size:14px;color:' + nameColor + ';font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>'
+                    + '<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px;">'
+                      + installed + ' → <span style="color:' + latestColor + ';">' + latest + '</span>'
+                    + '</div>',
+                  update: { card: pillCard },
+                },
+              };
+            };
+
+            const tileAreas = updates.map((_, i) => '"u' + i + '"').join(' ');
+            const tileCustomFields = {};
+            const tileFieldStyles  = {};
+            updates.forEach((e, i) => {
+              tileCustomFields['u' + i] = { card: makeUpdateTileCard(e) };
+              tileFieldStyles['u'  + i] = [{ 'justify-self': 'stretch' }];
+            });
+
+            const updateListCard = hasUpdates ? {
+              type: 'custom:button-card',
+              entity: entity?.entity_id,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: noHoverStyle },
+              styles: {
+                card: [
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '4px 28px 20px 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': tileAreas },
+                  { 'grid-template-columns': '1fr' },
+                  { gap: '8px' },
+                  { 'align-items': 'start' },
+                ],
+                custom_fields: tileFieldStyles,
+              },
+              custom_fields: tileCustomFields,
+            } : null;
+
+            const cards = hasUpdates
+              ? [headerCard, adviceCard, updateListCard]
+              : [headerCard, adviceCard];
+
+            return { type: 'vertical-stack', cards };
+          ]]]
+
+
+  icon_tap_action:
+    haptic: light
+    action: more-info

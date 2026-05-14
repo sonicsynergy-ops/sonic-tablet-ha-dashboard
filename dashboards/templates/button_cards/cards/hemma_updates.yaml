@@ -1,7 +1,7 @@
 hemma_updates:
   template:
     - hemma_entity
-    - hemma_updates_popup
+    - hemma_popup_updates
 
   variables:
     icon: updates
