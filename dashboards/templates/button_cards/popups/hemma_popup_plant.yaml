@@ -291,7 +291,7 @@ hemma_popup_plant:
                 card: [
                   { background: 'color-mix(in srgb,' + scoreColor + ' 12%,transparent)' },
                   { border: '1px solid color-mix(in srgb,' + scoreColor + ' 35%,transparent)' },
-                  { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 13px' },
+                  { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 15px' },
                 ],
                 grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
                 custom_fields: { c: [{ 'justify-self': 'center' }] },

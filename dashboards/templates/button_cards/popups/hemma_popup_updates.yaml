@@ -70,7 +70,7 @@ hemma_popup_updates:
                 card: [
                   { background: 'linear-gradient(135deg, color-mix(in srgb,' + statusGrad1 + ' 18%,transparent) 0%, color-mix(in srgb,' + statusGrad2 + ' 13%,transparent) 100%)' },
                   { border: '1px solid color-mix(in srgb,' + statusGrad1 + ' 40%,transparent)' },
-                  { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 13px' },
+                  { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 15px' },
                 ],
                 name: [
                   { 'font-size': '15px' }, { 'font-weight': '500' }, { color: statusColor },

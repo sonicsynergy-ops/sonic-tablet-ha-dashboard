@@ -331,7 +331,7 @@ hemma_climate_popup:
                     boxShadow:'none',
                   },
                   {
-                    padding:'8px 13px',
+                    padding:'8px 15px',
                   },
                 ],
 
