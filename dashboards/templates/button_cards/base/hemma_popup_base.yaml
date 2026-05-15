@@ -13,7 +13,7 @@ hemma_popup_base:
         title: ""
         dismissable: true
         adaptive: true
-        size: "[[[ return window.innerWidth >= 1250 ? 'auto' : 'fullscreen'; ]]]"
+        size: auto
 
   icon_tap_action:
     haptic: light
@@ -28,4 +28,4 @@ hemma_popup_base:
         title: ""
         dismissable: true
         adaptive: true
-        size: "[[[ return window.innerWidth >= 1250 ? 'auto' : 'fullscreen'; ]]]"
+        size: auto
