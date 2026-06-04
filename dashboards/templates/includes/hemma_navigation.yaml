@@ -242,11 +242,11 @@ card:
         }
 
         .navbar-popup{
-          background: var(--hemma-popup-bg) !important;
-          -webkit-backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          border-radius: var(--hemma-popup-br, 22px) !important;
-          box-shadow: var(--hemma-popup-shadow, 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12)) !important;
+          background: var(--hemma-navbar-popup-bg) !important;
+          -webkit-backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          border-radius: var(--hemma-navbar-popup-br, 22px) !important;
+          box-shadow: var(--hemma-navbar-popup-shadow, 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12)) !important;
           padding: 8px !important;
           width: max-content !important;
           max-width: calc(100vw - 24px) !important;
@@ -274,10 +274,10 @@ card:
           box-sizing: border-box;
           background: linear-gradient(
             to bottom right,
-            var(--hemma-popup-specular-start, rgba(255,255,255,0.32)) 0%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
-            var(--hemma-popup-specular-end, rgba(255,255,255,0.22)) 100%
+            var(--hemma-navbar-popup-specular-start, rgba(255,255,255,0.32)) 0%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
+            var(--hemma-navbar-popup-specular-end, rgba(255,255,255,0.22)) 100%
           );
           -webkit-mask:
             linear-gradient(#fff 0 0) content-box,

@@ -14,11 +14,7 @@ hemma_shared:
   variables:
     # Room images to preload (for smooth transitions between rooms)
     # Add your room names here - both light and dark variants will be preloaded
-    preload_rooms:
-      - home
-      - livingroom
-      - kitchen
-      - bedroom
+    preload_rooms: []  # Set in your dashboard file — see hemma.yaml for example
     preload_night_suffix: "-night"
     preload_path: "/local/hemma/rooms"
     mobile_preload_path: "/local/hemma/mobile"
@@ -142,37 +138,31 @@ hemma_shared:
       border-radius:inherit;
       pointer-events:none;
       z-index:-10;
-      background-image: var(--hero-img);
-      background-position: var(--hero-img-pos, center center);
-      background-size: cover;
+      background-image:
+        linear-gradient(var(--hero-tint, rgba(56,56,56,0.50)), var(--hero-tint, rgba(56,56,56,0.50))),
+        var(--hero-img);
+      background-position: 0 0, var(--hero-img-pos, center center);
+      background-size: 100% 100%, cover;
       background-repeat: no-repeat;
-      opacity:1;
       filter: var(--hero-img-filter);
       transform: scale(var(--hero-img-scale-current, 1.08)) !important;
       transform-origin: center;
-      transition: opacity .35s ease, filter .35s ease, transform .35s ease;
-      will-change: opacity, filter, transform;
-      animation: heroSwap .35s ease;
-    }
-
-    :host ha-card::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius:inherit;
-      pointer-events:none;
-      z-index:-9;
-      background: var(--hero-tint, rgba(56,56,56,0.50))
-    }
-
-    @keyframes heroSwap{
-      from{ opacity:0; filter: var(--hero-img-filter-from, var(--hero-img-filter)); }
-      to{   opacity:1; filter: var(--hero-img-filter); }
+      transition: filter .45s ease, transform .45s ease;
+      will-change: filter, transform;
     }
 
     @keyframes hemmaRoomReveal{
       from{ background: rgba(56,56,56,0.8); }
       to{   background: var(--hero-tint, rgba(56,56,56,0.50)); }
+    }
+
+    #name{
+      animation: heroNameFade .4s ease both;
+    }
+
+    @keyframes heroNameFade{
+      from{ opacity:0; }
+      to{   opacity:0.9; }
     }
 
     /* Mobile */
@@ -182,7 +172,7 @@ hemma_shared:
         --hero-img-saturate: var(--hero-img-saturate-mobile, 1.02);
         --hero-img-brightness: var(--hero-img-brightness-mobile, .985);
         --hero-img-scale-current: 1 !important;
-        --hero-tint: var(--hero-tint-mobile, rgba(56,56,56,0.50));
+        --hero-tint: var(--hero-tint-mobile, rgba(56,56,56,0.20));
         --hero-top: calc(var(--header-top-mobile, clamp(80px, 12svh, 120px)) - var(--header-top-mobile-nudge, 0px));
         --hero-temp-font-size: var(--hero-temp-font-size-mobile, 13px);
         --hero-temp-reserve: 0px;
@@ -306,9 +296,6 @@ hemma_shared:
       }
     }
 
-    /* Tablet touch (iPad) — prevent pull-to-refresh / background scroll bounce.
-       min-height: 601px excludes landscape phones (already handled by the
-       max-height: 600px landscape-mobile block above). */
     @media (min-width: 768px) and (min-height: 601px) and (pointer: coarse),
            (min-width: 768px) and (min-height: 601px) and (hover: none) {
       :host ha-card {

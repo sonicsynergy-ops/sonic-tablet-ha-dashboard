@@ -28,141 +28,7 @@ hemma_popup_battery:
               })
               .sort((a, b) => a.battery_pct - b.battery_pct);
 
-            const count = allBatteries.length;
-
-            let critical = 0;
-            let verylow = 0;
-            let low = 0;
-            let good = 0;
-
-            allBatteries.forEach(e => {
-              const p = e.battery_pct;
-
-              if (p <= 10) critical++;
-              else if (p <= 20) verylow++;
-              else if (p <= 40) low++;
-              else good++;
-            });
-
-            const C_HEALTHY = 'var(--hemma-popup-green-color,#44e371)';
-            const C_CARE    = 'var(--hemma-popup-yellow-color,#ffd600)';
-            const C_STRUG   = 'var(--hemma-popup-orange-color,#ff9230)';
-            const C_CRIT    = 'var(--hemma-popup-red-color,#ff453a)';
-
-            const statusColor =
-              critical > 0 ? C_CRIT :
-              verylow > 0 ? C_STRUG :
-              low > 0 ? C_CARE :
-              C_HEALTHY;
-
-            const statusLabel =
-              count === 0 ? 'No sensors' :
-              critical > 0 ? `${critical} critical` :
-              verylow > 0 ? `${verylow} very low` :
-              low > 0 ? `${low} low` :
-              'All good';
-
-            const isCharging = e => {
-              const a = e.attributes || {};
-
-              // Native charging attributes
-              if (
-                a.battery_state === 'charging' ||
-                a.device_power === 'charging' ||
-                a.power_state === 'charging' ||
-                a.is_charging === true ||
-                a.charging === true
-              ) {
-                return true;
-              }
-
-              // Charging battery icons
-              if (
-                typeof a.icon === 'string' &&
-                a.icon.includes('battery-charging')
-              ) {
-                return true;
-              }
-
-              // Try related vacuum entity automatically
-              const entityId = e.entity_id || '';
-
-              const vacuumGuess = entityId
-                .replace(/^sensor\./, 'vacuum.')
-                .replace(/_battery$/, '');
-
-              const vacuumEntity = states[vacuumGuess];
-
-              if (
-                vacuumEntity &&
-                (
-                  vacuumEntity.state === 'docked' ||
-                  vacuumEntity.state === 'returning'
-                )
-              ) {
-                return true;
-              }
-
-              return false;
-            };
-
-            const progressGradient = (p, charging = false) => {
-
-              if (charging) {
-                return `
-                  linear-gradient(
-                    90deg,
-                    #3ABEF6 0%,
-                    #46CDF9 20%,
-                    #9AE7FD 40%,
-                    #5CCAFA 60%,
-                    #3ABEF6 80%,
-                    #3ABEF6 100%
-                  )
-                `;
-              }
-
-              if (p <= 10)
-                return `
-                  linear-gradient(
-                    90deg,
-                    #C8231C 0%,
-                    #E8302A 35%,
-                    #FF3B30 65%,
-                    #FF5C5C 100%
-                  )
-                `;
-
-              if (p <= 20)
-                return `
-                  linear-gradient(
-                    90deg,
-                    #FC4141 0%,
-                    #FFA85C 50%,
-                    #FFCB47 75%
-                  )
-                `;
-
-              if (p <= 40)
-                return `
-                  linear-gradient(
-                    90deg,
-                    #FF985C 0%,
-                    #ECFF6D 50%,
-                    #B8FF47 75%
-                  )
-                `;
-
-              return `
-                linear-gradient(
-                  90deg,
-                  #57FFFC 0%,
-                  #54F2A0 30%,
-                  #5EFB80 65%,
-                  #42EF4E 100%
-                )
-              `;
-            };
+            const batteryEntityIds = allBatteries.map(e => e.entity_id);
 
             const cleanCardStyle = `
               :host {
@@ -219,12 +85,9 @@ hemma_popup_battery:
 
               .battery-status-pill::after {
                 content:"";
-
                 position:absolute;
                 inset:0;
-
                 border-radius:inherit;
-
                 background:
                   radial-gradient(
                     circle at center,
@@ -235,20 +98,13 @@ hemma_popup_battery:
                     ) 0%,
                     transparent 75%
                   );
-
                 opacity:.9;
-
                 pointer-events:none;
               }
 
               @keyframes batteryFlow {
-                0% {
-                  background-position:200% 50%;
-                }
-
-                100% {
-                  background-position:0% 50%;
-                }
+                0%   { background-position:200% 50%; }
+                100% { background-position:0%   50%; }
               }
 
               @media (max-width:600px) {
@@ -267,7 +123,7 @@ hemma_popup_battery:
               }
 
               ha-card {
-                background:rgba(255,255,255,0.07) !important;
+                background:var(--hemma-popup-tile-background, rgba(255,255,255,0.07)) !important;
                 border:none !important;
                 border-radius:24px !important;
                 box-shadow:none !important;
@@ -275,22 +131,22 @@ hemma_popup_battery:
                 -webkit-backdrop-filter:none !important;
                 cursor:pointer !important;
                 opacity:.94 !important;
-                transform:translateY(0) !important;
+                transform:scale(1) !important;
                 transition:
-                  background-color .18s ease,
-                  transform .18s ease,
-                  opacity .18s ease !important;
+                  background-color var(--hemma-popup-tile-hover-duration, 0.2s) ease,
+                  transform var(--hemma-popup-tile-hover-duration, 0.2s) ease,
+                  opacity var(--hemma-popup-tile-hover-duration, 0.2s) ease !important;
               }
 
               ha-card:hover {
-                background:rgba(255,255,255,0.09) !important;
+                background:var(--hemma-popup-tile-hover, rgba(255,255,255,0.09)) !important;
                 opacity:1 !important;
-                transform:translateY(-1px) !important;
+                transform:scale(var(--hemma-popup-tile-hover-scale, 1.01)) !important;
                 box-shadow:none !important;
               }
 
               ha-card:active {
-                transform:translateY(0) !important;
+                transform:scale(1) !important;
               }
 
               ha-card::before,
@@ -298,71 +154,14 @@ hemma_popup_battery:
               ha-ripple {
                 display:none !important;
               }
+
+              @keyframes batteryFlow {
+                0%   { background-position:200% 50%; }
+                100% { background-position:0%   50%; }
+              }
             `;
 
             const roomName = variables.room_name ?? 'Devices';
-
-            const pillGradient =
-              critical > 0
-                ? 'linear-gradient(90deg,#ff7a59 0%,#ff4d6d 55%,#ff5c8a 100%)'
-                : verylow > 0
-                  ? 'linear-gradient(90deg,#ffb347 0%,#ff7a59 50%,#ff5c8a 100%)'
-                  : low > 0
-                    ? 'linear-gradient(90deg,#ffd166 0%,#ffb347 100%)'
-                    : 'linear-gradient(90deg,#57c7ff 0%,#5be7c4 50%,#7dff6b 100%)';
-
-            const headerHtml = `
-              <div style="
-                font-family:var(--primary-font-family,system-ui);
-                color:#ffffff;
-                text-align:left;
-              ">
-                <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  align-items:flex-start;
-                  gap:12px;
-                ">
-                  <div>
-                    <div style="
-                      font-size:16px;
-                      font-weight:500;
-                      letter-spacing:-0.01em;
-                    ">
-                      ${roomName}
-                    </div>
-
-                    <div style="
-                      font-size:14px;
-                      color:rgba(255,255,255,0.6);
-                      margin-top:2px;
-                    ">
-                      Sensors · Batteries
-                    </div>
-                  </div>
-
-                  <div
-                    class="battery-status-pill"
-                    style="
-                      flex-shrink:0;
-                      --pill-color:${statusColor};
-                      --pill-gradient:${pillGradient};
-                    "
-                  >
-                    <span style="
-                      position:relative;
-                      z-index:2;
-                      font-size:15px;
-                      font-weight:500;
-                      color:${statusColor};
-                      white-space:nowrap;
-                    ">
-                      ${statusLabel}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            `;
 
             const baseCardStyle = [
               { '--ha-card-box-shadow': 'none' },
@@ -375,60 +174,106 @@ hemma_popup_battery:
               { WebkitBackdropFilter: 'none' },
             ];
 
+            /* -------------------------------------------------------
+             * Header Card — live: recomputes counts from states on every
+             * battery entity change via triggers_update
+             * ------------------------------------------------------- */
+
             const headerCard = {
               type: 'custom:button-card',
+              entity: batteryEntityIds[0],
+              triggers_update: batteryEntityIds,
               tap_action: { action: 'none' },
               show_icon: false,
               show_name: false,
               show_state: false,
 
-              card_mod: {
-                style: cleanCardStyle,
-              },
+              card_mod: { style: cleanCardStyle },
 
               styles: {
                 card: [
                   ...baseCardStyle,
                   { padding: '28px' },
                 ],
-
                 grid: [
                   { 'grid-template-areas': '"h"' },
                   { 'grid-template-columns': '1fr' },
                 ],
-
                 custom_fields: {
                   h: [{ 'justify-self': 'stretch' }],
                 },
               },
 
               custom_fields: {
-                h: headerHtml,
+                h: `[[[
+                  const filterList = ${JSON.stringify(filterList)};
+                  const roomName   = ${JSON.stringify(roomName)};
+
+                  const bats = Object.values(states).filter(e => {
+                    if (e.state === 'unavailable' || e.state === 'unknown') return false;
+                    const pct = parseFloat(e.state);
+                    if (isNaN(pct)) return false;
+                    return e.attributes.device_class === 'battery'
+                      && (!filterList || filterList.includes(e.entity_id));
+                  });
+
+                  let critical = 0, verylow = 0;
+                  bats.forEach(e => {
+                    const p = parseFloat(e.state);
+                    if (p <= 10) critical++;
+                    else if (p <= 20) verylow++;
+                  });
+
+                  const C_HEALTHY = 'var(--hemma-popup-green-color,#44e371)';
+                  const C_STRUG   = 'var(--hemma-popup-orange-color,#ff9230)';
+                  const C_CRIT    = 'var(--hemma-popup-red-color,#ff453a)';
+
+                  const statusColor = critical > 0 ? C_CRIT : verylow > 0 ? C_STRUG : C_HEALTHY;
+                  const statusLabel = bats.length === 0 ? 'No sensors'
+                    : critical > 0 ? critical + ' critical'
+                    : verylow > 0  ? verylow  + ' very low'
+                    : 'All good';
+
+                  const pillGradient = critical > 0
+                    ? 'linear-gradient(90deg,#ff7a59 0%,#ff4d6d 55%,#ff5c8a 100%)'
+                    : verylow > 0
+                    ? 'linear-gradient(90deg,#ffb347 0%,#ff7a59 50%,#ff5c8a 100%)'
+                    : 'linear-gradient(90deg,#57c7ff 0%,#5be7c4 50%,#7dff6b 100%)';
+
+                  return '<div style="font-family:var(--primary-font-family,system-ui);color:var(--hemma-popup-tile-text-primary);text-align:left;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">'
+                      + '<div>'
+                        + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">' + roomName + '</div>'
+                        + '<div style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);margin-top:2px;">Sensors \xb7 Batteries</div>'
+                      + '</div>'
+                      + '<div class="battery-status-pill" style="flex-shrink:0;--pill-color:' + statusColor + ';--pill-gradient:' + pillGradient + ';">'
+                        + '<span style="position:relative;z-index:2;font-size:15px;font-weight:500;color:' + statusColor + ';white-space:nowrap;">' + statusLabel + '</span>'
+                      + '</div>'
+                    + '</div>'
+                  + '</div>';
+                ]]]`,
               },
             };
 
+            /* -------------------------------------------------------
+             * Tile builder — live: custom_fields.c is a [[[...]]] template
+             * with entity ID baked as a literal, reads live states[id]
+             * ------------------------------------------------------- */
+
             const buildTile = e => {
-              const pct = Math.round(e.battery_pct);
-              const charging = isCharging(e);
-
-              const name =
-                (e.attributes.friendly_name || e.entity_id)
-                  .replace(/ Battery$/i, '');
-
-              const barGradient = progressGradient(pct, charging);
+              // Pre-compute the vacuum entity guess so we can bake it as a literal
+              const vacuumGuess = e.entity_id
+                .replace(/^sensor\./, 'vacuum.')
+                .replace(/_battery$/, '');
 
               return {
                 type: 'custom:button-card',
                 entity: e.entity_id,
-                tap_action: {
-                  action: 'more-info',
-                },
+                tap_action: { action: 'more-info' },
                 show_icon: false,
                 show_name: false,
                 show_state: false,
-                card_mod: {
-                  style: tileTapStyle,
-                },
+                card_mod: { style: tileTapStyle },
 
                 styles: {
                   card: [
@@ -443,120 +288,66 @@ hemma_popup_battery:
                     { WebkitBackdropFilter: 'none' },
                     { padding: '18px 18px 16px 18px' },
                   ],
-
                   grid: [
                     { 'grid-template-areas': '"c"' },
                     { 'grid-template-columns': '1fr' },
                   ],
-
                   custom_fields: {
                     c: [{ 'justify-self': 'stretch' }],
                   },
                 },
 
                 custom_fields: {
-                  c: `
-                    <div style="
-                      display:grid;
-                      grid-template-columns:minmax(0,1fr) auto;
-                      grid-template-areas:
-                        'name pct'
-                        'bar bar';
-                      row-gap:10px;
-                      column-gap:12px;
-                      align-items:center;
-                      text-align:left;
-                    ">
+                  // entity ID and vacuumGuess baked as literals — bypasses nested-card
+                  // context inheritance where [[[...]]] templates see the parent's entity
+                  c: `[[[
+                    const s = states['${e.entity_id}'];
+                    const pct = Math.round(parseFloat(s?.state) || 0);
+                    const a = s?.attributes || {};
 
-                      <span style="
-                        grid-area:name;
-                        font-size:13px;
-                        color:rgba(255,255,255,0.88);
-                        font-weight:600;
-                        white-space:nowrap;
-                        overflow:hidden;
-                        text-overflow:ellipsis;
-                        min-width:0;
-                      ">
-                        ${name}
-                      </span>
+                    const vacuumState = states['${vacuumGuess}']?.state || '';
+                    const charging = a.battery_state === 'charging'
+                      || a.device_power === 'charging'
+                      || a.power_state === 'charging'
+                      || a.is_charging === true
+                      || a.charging === true
+                      || (typeof a.icon === 'string' && a.icon.includes('battery-charging'))
+                      || vacuumState === 'docked'
+                      || vacuumState === 'returning';
 
-                      <span style="
-                        grid-area:pct;
-                        justify-self:end;
-                        font-size:14px;
-                        font-weight:600;
-                        color:rgba(255,255,255,0.92);
-                        white-space:nowrap;
-                      ">
-                        ${pct}%
-                      </span>
+                    let barGradient;
+                    if (charging) {
+                      barGradient = 'linear-gradient(90deg,#3ABEF6 0%,#46CDF9 20%,#9AE7FD 40%,#5CCAFA 60%,#3ABEF6 80%,#3ABEF6 100%)';
+                    } else if (pct <= 10) {
+                      barGradient = 'linear-gradient(90deg,#C8231C 0%,#E8302A 35%,#FF3B30 65%,#FF5C5C 100%)';
+                    } else if (pct <= 20) {
+                      barGradient = 'linear-gradient(90deg,#FC4141 0%,#FFA85C 50%,#FFCB47 75%)';
+                    } else if (pct <= 40) {
+                      barGradient = 'linear-gradient(90deg,#FF985C 0%,#ECFF6D 50%,#B8FF47 75%)';
+                    } else {
+                      barGradient = 'linear-gradient(90deg,#57FFFC 0%,#54F2A0 30%,#5EFB80 65%,#42EF4E 100%)';
+                    }
 
-                      <div style="
-                        grid-area:bar;
-                        display:flex;
-                        align-items:center;
-                        width:100%;
-                      ">
+                    const name = (a.friendly_name || '${e.entity_id}').replace(/ Battery$/i, '');
+                    const barWidth = Math.max(4, pct).toFixed(1) + '%';
 
-                        <div style="
-                          flex:1;
-                          height:8px;
-                          background:rgba(255,255,255,0.055);
-                          border-radius:999px;
-                          overflow:hidden;
-                          position:relative;
-                          ${charging ? 'margin-right:8px;' : ''}
-                        ">
+                    const chargingIcon = charging
+                      ? '<ha-icon icon="mdi:lightning-bolt" style="flex-shrink:0;display:flex;align-items:center;justify-content:center;width:13px;height:13px;min-width:13px;min-height:13px;margin-top:0px;margin-bottom:1px;transform:translateY(0.5px);overflow:visible;background:transparent !important;color:#78e7ff;opacity:.98;filter:drop-shadow(0 0 3px rgba(120,231,255,0.2));"></ha-icon>'
+                      : '';
 
-                          <div style="
-                            height:100%;
-                            width:${Math.max(4, pct).toFixed(1)}%;
-                            border-radius:999px;
-                            background:${barGradient};
-                            background-size:200% 100%;
-                            background-repeat:repeat;
-                            ${charging ? `
-                              animation:batteryFlow 3.5s linear infinite;
-                            ` : ''}
-                            transition:
-                              width .35s ease,
-                              background-position .2s linear;
-                          "></div>
-
-                        </div>
-
-                        ${charging ? `
-                          <ha-icon
-                            icon="mdi:lightning-bolt"
-                            style="
-                              flex-shrink:0;
-                              display:flex;
-                              align-items:center;
-                              justify-content:center;
-                              width:13px;
-                              height:13px;
-                              min-width:13px;
-                              min-height:13px;
-                              margin-top:0px;
-                              margin-bottom:1px;
-                              transform:translateY(0.5px);
-                              overflow:visible;
-                              background:transparent !important;
-                              color:#78e7ff;
-                              opacity:.98;
-                              filter:
-                                drop-shadow(
-                                  0 0 3px rgba(120,231,255,0.2)
-                                );
-                            "
-                          ></ha-icon>
-                        ` : ''}
-
-                      </div>
-
-                    </div>
-                  `,
+                    // &quot; used for CSS grid-template-areas row strings to avoid single-quote
+                    // escaping issues inside the outer backtick template literal
+                    return '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:&quot;name pct&quot; &quot;bar bar&quot;;row-gap:10px;column-gap:12px;align-items:center;text-align:left;">'
+                      + '<span style="grid-area:name;font-size:13px;color:var(--hemma-popup-tile-text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">' + name + '</span>'
+                      + '<span style="grid-area:pct;justify-self:end;font-size:14px;font-weight:600;color:var(--hemma-popup-tile-text-primary);white-space:nowrap;">' + pct + '%</span>'
+                      + '<div style="grid-area:bar;display:flex;align-items:center;width:100%;min-height:13px;">'
+                        + '<div style="flex:1;height:8px;background:var(--hemma-popup-progress-track, rgba(255,255,255,0.09));border-radius:999px;overflow:hidden;position:relative;' + (charging ? 'margin-right:8px;' : '') + '">'
+                          + '<div style="height:100%;width:' + barWidth + ';border-radius:999px;background:' + barGradient + ';background-size:200% 100%;background-repeat:repeat;' + (charging ? 'animation:batteryFlow 3.5s linear infinite;' : '') + 'transition:width .35s ease,background-position .2s linear;"></div>'
+                        + '</div>'
+                        + chargingIcon
+                      + '</div>'
+                    + '</div>';
+                  ]]]`,
                 },
               };
             };
@@ -577,43 +368,30 @@ hemma_popup_battery:
               const fStyles = {};
 
               allBatteries.forEach((e, i) => {
-                fields['s' + i] = {
-                  card: buildTile(e),
-                };
-
-                fStyles['s' + i] = [
-                  { 'justify-self': 'stretch' },
-                ];
+                fields['s' + i] = { card: buildTile(e) };
+                fStyles['s' + i] = [{ 'justify-self': 'stretch' }];
               });
 
               tilesCard = {
                 type: 'custom:button-card',
-
-                tap_action: {
-                  action: 'none',
-                },
-
+                tap_action: { action: 'none' },
                 show_icon: false,
                 show_name: false,
                 show_state: false,
 
-                card_mod: {
-                  style: cleanCardStyle,
-                },
+                card_mod: { style: cleanCardStyle },
 
                 styles: {
                   card: [
                     ...baseCardStyle,
                     { padding: '2px 28px 20px 28px' },
                   ],
-
                   grid: [
                     { 'grid-template-areas': areas.join(' ') },
                     { 'grid-template-columns': 'repeat(2,1fr)' },
                     { gap: '10px' },
                     { 'align-items': 'start' },
                   ],
-
                   custom_fields: fStyles,
                 },
 
@@ -623,30 +401,22 @@ hemma_popup_battery:
 
             const emptyCard = {
               type: 'custom:button-card',
-
-              tap_action: {
-                action: 'none',
-              },
-
+              tap_action: { action: 'none' },
               show_icon: false,
               show_name: false,
               show_state: false,
 
-              card_mod: {
-                style: cleanCardStyle,
-              },
+              card_mod: { style: cleanCardStyle },
 
               styles: {
                 card: [
                   ...baseCardStyle,
                   { padding: '20px 28px' },
                 ],
-
                 grid: [
                   { 'grid-template-areas': '"m"' },
                   { 'grid-template-columns': '1fr' },
                 ],
-
                 custom_fields: {
                   m: [{ 'justify-self': 'center' }],
                 },
@@ -654,13 +424,7 @@ hemma_popup_battery:
 
               custom_fields: {
                 m: `
-                  <div style="
-                    color:rgba(255,255,255,0.4);
-
-                    font-size:14px;
-
-                    text-align:center;
-                  ">
+                  <div style="color:var(--hemma-popup-tile-text-muted);font-size:14px;text-align:center;">
                     No battery sensors found
                   </div>
                 `,
@@ -669,7 +433,6 @@ hemma_popup_battery:
 
             return {
               type: 'vertical-stack',
-
               cards: [
                 headerCard,
                 tilesCard || emptyCard,

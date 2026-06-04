@@ -46,8 +46,8 @@ hemma_popup_updates:
 
             const tileTapStyle = [
               ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
-              'ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }',
-              'ha-card:hover { background: rgba(255,255,255,0.09) !important; }',
+              'ha-card { background: var(--hemma-popup-tile-background, rgba(255,255,255,0.07)) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: scale(1) !important; transition: background-color var(--hemma-popup-tile-hover-duration, 0.2s) ease, transform var(--hemma-popup-tile-hover-duration, 0.2s) ease !important; }',
+              'ha-card:hover { background: var(--hemma-popup-tile-hover, rgba(255,255,255,0.09)) !important; transform: scale(var(--hemma-popup-tile-hover-scale, 1.02)) !important; }',
               'ha-ripple { display: none !important; }',
             ].join('\n');
 
@@ -102,9 +102,9 @@ hemma_popup_updates:
                 },
               },
               custom_fields: {
-                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;">'
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:var(--hemma-popup-tile-text-primary);">'
                   + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">System</div>'
-                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);font-weight:400;">Updates · Software</div>'
+                  + '<div style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);font-weight:400;">Updates · Software</div>'
                 + '</div>',
                 badge: { card: badgePillCard },
               },
@@ -179,7 +179,7 @@ hemma_popup_updates:
                 card_mod: { style: inProg ? noHoverStyle : tileTapStyle },
                 styles: {
                   card: [
-                    { background: 'rgba(255,255,255,0.07)' }, { border: 'none' }, { 'border-radius': '24px' },
+                    { background: 'var(--hemma-popup-tile-background, rgba(255,255,255,0.07))' }, { border: 'none' }, { 'border-radius': '24px' },
                     { 'box-shadow': 'none' }, { padding: '16px 16px 16px 20px' },
                   ],
                   grid: [
@@ -194,7 +194,7 @@ hemma_popup_updates:
                 },
                 custom_fields: {
                   body: '<div style="font-size:14px;color:' + nameColor + ';font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>'
-                    + '<div style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:3px;">'
+                    + '<div style="font-size:12px;color:var(--hemma-popup-tile-text-muted);margin-top:3px;">'
                       + installed + ' → <span style="color:' + latestColor + ';">' + latest + '</span>'
                     + '</div>',
                   update: { card: pillCard },

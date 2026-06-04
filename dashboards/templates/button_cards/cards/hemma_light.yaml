@@ -30,6 +30,7 @@ hemma_light:
     ]]]
 
   variables:
+    icon: light
     show_toggle: true
     toggle_service: script.turn_on
     toggle_service_data: |
@@ -62,6 +63,9 @@ hemma_light:
           --ha-card-background: transparent;
           --ha-card-box-shadow: none !important;
           --button-card-box-shadow-hover: none !important;
+          --ha-card-backdrop-filter: none;
+          --ha-card-backdrop-filter-hover: none;
+          --dialog-box-shadow: var(--hemma-dialog-shadow) !important;
         popup_styles:
           - style: all
             styles: |
@@ -198,7 +202,7 @@ hemma_light:
                           --button-card-box-shadow: none !important;
                           --button-card-box-shadow-hover: none !important;
                           background: var(--hemma-popup-entity-hover, rgba(0, 0, 0, 0.5)) !important;
-                          border-color: rgba(255, 255, 255, 0.08) !important;
+                          border-color: var(--hemma-popup-entity-border-hover, rgba(255,255,255,0.08)) !important;
                           box-shadow: none !important;
                           filter: none !important;
                           transform: none !important;
@@ -224,29 +228,46 @@ hemma_light:
       - cursor: pointer
 
     img_cell:
-      - background: transparent !important
+      - background: transparent
       - box-shadow: none !important
       - transition: filter 0.2s ease
       - cursor: pointer
 
   extra_styles: |
-    @media (hover: hover) {
-      #img-cell:hover {
-        transform: scale(1.05);
-        transition: transform 0.15s ease;
-      }
-      #img-cell:hover img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-      }
+    #img-cell {
+      position: relative;
+      border-radius: 50% !important;
+      background: var(--hemma-icon-circle-bg, rgba(255,255,255,0.10)) !important;
+      width: 44px !important;
+      height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
     }
-
+    #img-cell::before { opacity: 0 !important; }
+    #img-cell img {
+      width: 68% !important;
+      height: 68% !important;
+      max-width: 68% !important;
+      max-height: 68% !important;
+      object-fit: contain !important;
+      flex: none !important;
+    }
+    #img-cell ha-icon {
+      --mdc-icon-size: 26px !important;
+      flex: none !important;
+      color: rgba(255,255,255,1.0) !important;
+    }
+    #icon { color: rgba(255,255,255,1.0) !important; }
+    @media (max-width: 767px) and (orientation: portrait) {
+      #img-cell { width: 38px !important; height: 38px !important; }
+      #img-cell ha-icon { --mdc-icon-size: 23px !important; }
+      #toggle { filter: invert(var(--hemma-toggle-invert, 0)); }
+    }
+    @media (hover: hover) {
+      #img-cell:hover { filter: brightness(1.15); transform: scale(1.03); transition: filter 0.15s ease, transform 0.15s ease; }
+    }
     @media (hover: none) {
-      #img-cell:active {
-        transform: scale(1.05);
-      }
-      #img-cell:active img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-      }
+      #img-cell:active { filter: brightness(1.15); transform: scale(1.03); }
     }

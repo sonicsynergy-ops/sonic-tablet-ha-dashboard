@@ -1,0 +1,310 @@
+# Recently Added Popup
+# vertical-stack: static header card + swipe-card carousel.
+# Only the poster/info content slides; the header never moves.
+# Pill-shaped pagination bars styled via swipe-card-patch.js.
+hemma_popup_recently_added:
+
+  tap_action:
+    haptic: light
+    action: >
+      [[[
+        return typeof window.browser_mod !== 'undefined' ? 'fire-dom-event' : 'more-info';
+      ]]]
+    entity: "[[[ return entity?.entity_id; ]]]"
+    browser_mod:
+      service: browser_mod.popup
+      data:
+        tag: '[[[ return (entity?.entity_id || "hemma_recently_added").replace(/\./g, "_"); ]]]'
+        title: ""
+        dismissable: true
+        adaptive: true
+        size: auto
+        popup_styles:
+          - style: all
+            styles: |
+              ha-adaptive-dialog, ha-dialog {
+                --dialog-surface-margin-top: 100px;
+                --dialog-content-padding: 0px;
+                --mdc-dialog-min-width: 600px;
+                --mdc-dialog-max-width: 600px;
+                --mdc-dialog-max-height: 380px;
+              }
+              @media (max-width: 767px) {
+                ha-adaptive-dialog, ha-dialog {
+                  --dialog-surface-margin-top: 0px;
+                  --mdc-dialog-min-width: calc(100vw - 32px);
+                  --mdc-dialog-max-width: calc(100vw - 32px);
+                  --mdc-dialog-max-height: calc(100svh - 80px);
+                }
+              }
+              @media (min-width: 1250px) {
+                ha-adaptive-dialog, ha-dialog {
+                  --dialog-surface-margin-top: 150px;
+                }
+              }
+              swipe-card {
+                --swiper-pagination-color: rgba(255,255,255,0.95);
+                --swiper-theme-color: rgba(255,255,255,0.95);
+              }
+        content: |
+          [[[
+            const moviesData = states['sensor.recently_added_movies']?.attributes?.data;
+            const tvData     = states['sensor.recently_added_tv']?.attributes?.data;
+
+            const rawM = Array.isArray(moviesData) ? moviesData.slice(1).filter(i => i && i.title) : [];
+            const rawT = Array.isArray(tvData)     ? tvData.slice(1).filter(i => i && i.title)     : [];
+            /* interleave: movie, TV, movie, TV, ... */
+            const items = [];
+            const maxLen = Math.max(rawM.length, rawT.length);
+            for (let i = 0; i < maxLen; i++) {
+              if (i < rawM.length) items.push(Object.assign({}, rawM[i], {_isTV: false}));
+              if (i < rawT.length) items.push(Object.assign({}, rawT[i], {_isTV: true}));
+            }
+            const N = items.length;
+
+            /* ── helpers ─────────────────────────────────── */
+            const esc = s => String(s ?? '')
+              .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+            const resolveUrl = raw => {
+              if (!raw) return '';
+              const s = String(raw);
+              return s.startsWith('/') ? location.origin + s : s;
+            };
+
+            const ago = iso => {
+              if (!iso) return '';
+              const ms = Date.now() - new Date(iso).getTime();
+              const h  = ms / 3600000;
+              const d  = ms / 86400000;
+              if (h < 1)  return 'just now';
+              if (h < 24) return Math.floor(h) + 'h ago';
+              if (d < 7)  return Math.floor(d) + 'd ago';
+              return Math.floor(d / 7) + 'w ago';
+            };
+
+            /* ── empty state ─────────────────────────────── */
+            if (N === 0) {
+              return {
+                type: 'custom:button-card',
+                entity: 'sensor.recently_added_movies',
+                tap_action: { action: 'none' },
+                show_icon: false, show_name: false, show_label: false, show_state: false,
+                styles: { card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '40px' }] },
+                name: '<div style="text-align:left;color:rgba(255,255,255,0.5);font-size:14px;">Nothing recently added</div>',
+              };
+            }
+
+            /* ── responsive layout ──────────────────────────── */
+            const isMobile     = window.innerWidth < 600;
+            const slideH       = isMobile ? 420 : 300;
+            const swipeH       = slideH + 14;
+            const summaryClamp = isMobile ? 8 : 7;
+
+            /* ── shared extra_styles for transparent button-cards ── */
+            const transparentStyles = 'ha-card{'
+              + 'background:transparent!important;'
+              + 'border:none!important;'
+              + 'box-shadow:none!important;'
+              + '-webkit-backdrop-filter:none!important;'
+              + 'backdrop-filter:none!important;'
+              + 'padding:0!important;'
+              + 'border-radius:0!important;'
+              + 'overflow:hidden!important;'
+              + 'cursor:default!important;'
+              + '}'
+              + '#container{padding:0!important;height:100%!important;}'
+              + 'ha-ripple{display:none!important;}';
+
+            /* ── slide cards (poster + info only, no header) ── */
+            const slideCards = items.map(function(item) {
+              const posterUrl = resolveUrl(item.poster);
+              const timeAgo   = ago(item.airdate);
+              const isTV      = item._isTV;
+              const badgeClr     = isTV ? '#A547FE' : '#FA7D24';
+              const badgeClr2    = isTV ? '#C574FE' : '#F27B13';
+              const badgeTextClr = isTV ? '#DFB0FB' : '#FA9D51';
+              const badgeTxt     = isTV ? 'TV SHOW' : 'MOVIE';
+              const isWatched    = item.flag === false || item.flag === 'false';
+
+              const posterImg = posterUrl
+                ? '<img src="' + esc(posterUrl) + '" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy"/>'
+                : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:plex" style="--mdc-icon-size:36px;color:rgba(255,255,255,0.2);"></ha-icon></div>';
+
+              const dotSize  = isMobile ? 16 : 20;
+              const dotIcon  = isMobile ?  8 : 11;
+              const watchedDot = isWatched
+                ? '<div style="position:absolute;top:6px;right:6px;width:' + dotSize + 'px;height:' + dotSize + 'px;background:rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,0.1);">'
+                  + '<svg viewBox="0 0 10 10" width="' + dotIcon + '" height="' + dotIcon + '"><polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+                  + '</div>'
+                : '';
+
+              const makePoster = (h, w, r) =>
+                '<div style="position:relative;' + (w ? 'width:' + w + 'px;' : '') + 'height:' + h + 'px;border-radius:' + r + 'px;box-shadow:0 4px 16px rgba(0,0,0,0.4);">'
+                + '<div style="height:100%;border-radius:' + r + 'px;overflow:hidden;">' + posterImg + '</div>'
+                + watchedDot
+                + '</div>';
+
+              const episodeLine = isTV && (item.number || item.episode)
+                ? '<div style="font-size:15px;font-weight:500;color:rgba(255,255,255,0.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc([item.number, item.episode].filter(Boolean).join(' \xb7 ')) + '</div>'
+                : '';
+
+              const yearGenreParts = [];
+              if (!isTV && item.aired) {
+                const yr = String(item.aired).slice(0, 4);
+                if (/^\d{4}$/.test(yr)) yearGenreParts.push(yr);
+              }
+              if (item.genres) yearGenreParts.push(esc(item.genres));
+              const yearGenreLine = yearGenreParts.length
+                ? '<div style="font-size:15px;color:rgba(255,255,255,0.65);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + yearGenreParts.join(' \xb7 ') + '</div>'
+                : '';
+
+              const agoLine = timeAgo
+                ? '<div style="font-size:15px;color:rgba(255,255,255,0.4);">Added ' + timeAgo + '</div>'
+                : '';
+
+              const summaryLen = (item.summary || '').length;
+              let summaryFont, sClamp;
+              if (isMobile && summaryLen > 0) {
+                const availH = slideH - 14 - 20 - 168 - 14;
+                const colW   = window.innerWidth - 40;
+                summaryFont  = 14;
+                sClamp       = summaryClamp;
+                for (let f = 16; f >= 14; f--) {
+                  const cpl  = Math.floor(colW / (f * 0.58));
+                  const need = Math.ceil(summaryLen / cpl);
+                  const fits = Math.floor(availH / (f * 1.5));
+                  if (need <= fits) { summaryFont = f; sClamp = fits; break; }
+                }
+              } else {
+                summaryFont = summaryLen > 420 ? 12 : summaryLen > 280 ? 13 : 14;
+                sClamp      = summaryClamp;
+              }
+              const summaryLine = item.summary
+                ? '<div style="font-size:' + summaryFont + 'px;color:rgba(255,255,255,0.5);padding-top:10px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:' + sClamp + ';-webkit-box-orient:vertical;word-break:break-word;text-align:left;">' + esc(item.summary) + '</div>'
+                : '';
+
+              const badgeSpan = '<span style="display:inline-flex;width:fit-content;background:linear-gradient(135deg,color-mix(in srgb,' + badgeClr + ' 32%,transparent) 0%,color-mix(in srgb,' + badgeClr2 + ' 24%,transparent) 100%);border:1px solid color-mix(in srgb,' + badgeClr2 + ' 65%,transparent);border-radius:999px;padding:2px 6px;font-size:10px;font-weight:600;letter-spacing:0.06em;color:' + badgeTextClr + ';font-family:var(--primary-font-family,system-ui);white-space:nowrap;">' + badgeTxt + '</span>';
+              const titleDiv  = '<div style="font-size:20px;font-weight:700;color:var(--primary-text-color,#fff);line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(item.title) + '</div>';
+              const font      = 'font-family:var(--primary-font-family,\'Hanken Grotesk\',system-ui);';
+
+              const slideHtml = isMobile
+                /* ── mobile ── */
+                ? '<div style="width:100%;height:' + slideH + 'px;padding:14px 20px 20px;overflow:hidden;box-sizing:border-box;' + font + 'display:flex;flex-direction:column;gap:14px;">'
+                  + '<div style="display:flex;flex-direction:row;gap:14px;align-items:flex-start;">'
+                  + makePoster(168, 112, 10)
+                  + '<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;overflow:hidden;text-align:left;">'
+                  + badgeSpan + titleDiv + episodeLine + yearGenreLine + agoLine
+                  + '</div></div>'
+                  + summaryLine
+                  + '</div>'
+                /* ── desktop: side-by-side grid ── */
+                : '<div style="width:100%;display:grid;grid-template-columns:150px 1fr;height:' + slideH + 'px;padding:14px 20px 20px;column-gap:18px;align-items:center;overflow:hidden;box-sizing:border-box;' + font + '">'
+                  + makePoster(225, null, 10)
+                  + '<div style="width:100%;min-width:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start;text-align:left;gap:10px;white-space:normal;">'
+                  + badgeSpan + titleDiv + episodeLine + yearGenreLine + agoLine + summaryLine
+                  + '</div></div>';
+
+              return {
+                type: 'custom:button-card',
+                tap_action: { action: 'none' },
+                show_icon: false,
+                show_name: false,
+                show_label: false,
+                show_state: false,
+                extra_styles: transparentStyles,
+                styles: {
+                  card: [
+                    { background: 'transparent' },
+                    { border: 'none' },
+                    { 'box-shadow': 'none' },
+                    { padding: '0' },
+                    { width: '100%' },
+                    { height: slideH + 'px' },
+                    { 'border-radius': '0' },
+                  ],
+                  grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                  custom_fields: { c: [{ 'justify-self': 'stretch' }, { height: '100%' }, { 'white-space': 'normal' }] },
+                },
+                custom_fields: { c: slideHtml },
+              };
+            });
+
+            /* ── header ── */
+            const headerCard = {
+              type: 'custom:button-card',
+              tap_action: { action: 'none' },
+              show_icon: false,
+              show_name: false,
+              show_label: false,
+              show_state: false,
+              extra_styles: transparentStyles,
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0' },
+                  { 'border-radius': '0' },
+                ],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'stretch' }] },
+              },
+              custom_fields: {
+                c: '<div style="padding:20px 20px 12px;text-align:left;">'
+                  + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;color:var(--primary-text-color,#fff);line-height:1.2;">Media</div>'
+                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:2px;">Plex \xb7 Recently Added</div>'
+                  + '</div>',
+              },
+            };
+
+            /* ── swipe-card (carousel, rounded bottom corners) ── */
+            const swipeCard = {
+              type: 'custom:swipe-card',
+              card_mod: {
+                style: 'ha-card,:host{'
+                  + 'background:transparent!important;'
+                  + 'box-shadow:none!important;'
+                  + 'border:none!important;'
+                  + 'border-radius:0 0 16px 16px!important;'
+                  + 'overflow:hidden!important;'
+                  + '--swiper-pagination-color:var(--primary-color,rgba(255,255,255,0.9));'
+                  + '--swiper-theme-color:rgba(255,255,255,0.9);'
+                  + '}'
+                  + '.swiper,.swiper-container{height:' + swipeH + 'px!important;border-radius:0 0 16px 16px!important;overflow:hidden!important;}'
+                  + '.swiper-slide{width:100%!important;max-width:none!important;flex-shrink:0!important;}'
+                  + '.swiper-pagination-bullets{display:flex!important;flex-direction:row!important;gap:8px!important;align-items:center!important;justify-content:center!important;}'
+                  + '.swiper-pagination-bullet{width:15px!important;height:7px!important;border-radius:3px!important;background:rgba(255,255,255,0.15)!important;opacity:.9!important;margin:0!important;flex-shrink:0!important;transition:width 0.25s,background 0.25s!important;}'
+                  + '.swiper-pagination-bullet-active{width:30px!important;background:var(--primary-color,rgba(255,255,255,0.9))!important;}',
+              },
+              cards: slideCards,
+              parameters: {
+                autoplay: {
+                  delay: 6000,
+                  disableOnInteraction: false,
+                  pauseOnMouseEnter: false,
+                },
+                pagination: {
+                  clickable: true,
+                },
+                loop: false,
+                speed: 450,
+                slidesPerView: 1,
+                spaceBetween: 0,
+                observer: true,
+                observeParents: true,
+                resizeObserver: true,
+              },
+            };
+
+            /* ── vertical-stack: pinned header above carousel ── */
+            return {
+              type: 'vertical-stack',
+              card_mod: {
+                style: ':host{--vertical-stack-card-gap:0px;}'
+                  + 'div{padding-bottom:0!important;}',
+              },
+              cards: [headerCard, swipeCard],
+            };
+          ]]]

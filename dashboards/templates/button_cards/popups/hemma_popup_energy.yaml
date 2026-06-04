@@ -16,6 +16,13 @@ hemma_popup_energy:
       data:
         content: |
           [[[
+            const powerId     = variables.entity_power || entity?.entity_id;
+            const todayId     = variables.entity_usage_today;
+            const monthId     = variables.entity_usage_month;
+            const costTodayId = variables.entity_cost_today;
+            const costMonthId = variables.entity_cost_month;
+            const roomName    = variables.room_name || 'Energy';
+
             const safeNum = (id) => {
               if (!id) return null;
               const s = states[id] && states[id].state;
@@ -24,145 +31,73 @@ hemma_popup_energy:
               return isNaN(n) ? null : n;
             };
 
-            // Sensors report kWh
-            const fmtEnergy = (v) => {
-              if (v == null) return '—';
-              if (v < 1)   return v.toFixed(2);
-              if (v < 10)  return v.toFixed(1);
-              return Math.round(v).toString();
-            };
-
-            const fmtPower = (v) => v == null ? '—' : String(Math.round(v));
-
-            const powerId     = variables.entity_power || entity?.entity_id;
-            const todayId     = variables.entity_usage_today;
-            const monthId     = variables.entity_usage_month;
-            const costTodayId = variables.entity_cost_today;
-            const costMonthId = variables.entity_cost_month;
-
+            // costCurrency derived from entity attributes at tap time — unit doesn't change at runtime
             const costCurrency = (costTodayId && states[costTodayId]?.attributes?.unit_of_measurement)
-              || (costMonthId && states[costMonthId]?.attributes?.unit_of_measurement)
+              || (costMonthId  && states[costMonthId]?.attributes?.unit_of_measurement)
               || '';
-            const fmtCost = (v) => v == null ? '' : `${costCurrency}${v.toFixed(2)}`;
 
-            const power      = safeNum(powerId);
-            const usageToday = safeNum(todayId);
-            const usageMonth = safeNum(monthId);
-            const costToday  = safeNum(costTodayId);
-            const costMonth  = safeNum(costMonthId);
+            // graphColor baked for mini-graph-card color property
+            const power = safeNum(powerId);
+            const graphColor =
+              power >= 3000 ? '#FF453A' :
+              power >= 1000 ? '#FF9230' :
+              power >= 200  ? '#FFD166' :
+              '#67F5A0';
 
-            const _ck = 'hemma_energy_' + (powerId || 'x');
-            const _ch = [power, usageToday, usageMonth, costToday, costMonth].join('|');
-            window._hc = window._hc || {};
-            if (window._hc[_ck]?.h === _ch) return window._hc[_ck].r;
+            // Safe JSON literals for inner templates
+            const _pid  = JSON.stringify(powerId     || '');
+            const _tid  = JSON.stringify(todayId     || '');
+            const _mid  = JSON.stringify(monthId     || '');
+            const _ctid = JSON.stringify(costTodayId || '');
+            const _cmid = JSON.stringify(costMonthId || '');
+            const _cur  = JSON.stringify(costCurrency);
 
-            let color = 'var(--hemma-popup-green-color, #67f5a0)';
-            let label = 'Idle';
-            if (power >= 3000) {
-              color = 'var(--hemma-popup-red-color, #ff453a)';
-              label = 'Extreme';
-            } else if (power >= 1000) {
-              color = 'var(--hemma-popup-orange-color, #ff9230)';
-              label = 'Heavy';
-            } else if (power >= 200) {
-              color = 'var(--hemma-popup-yellow-color, #ffd600)';
-              label = 'Normal';
-            }
+            // Shared helper snippets for inner [[[...]]] templates
+            const _safe = "const safeNum=(id)=>{if(!id)return null;const s=states[id]&&states[id].state;if(!s||s==='unknown'||s==='unavailable')return null;const n=parseFloat(s);return isNaN(n)?null:n;};";
+            const _fmt  = "const fmtPower=(v)=>v==null?'—':String(Math.round(v));const fmtEnergy=(v)=>{if(v==null)return'—';if(v<1)return v.toFixed(2);if(v<10)return v.toFixed(1);return Math.round(v).toString();};";
 
-            // Status badge & gauge gradient
-            const statusGrad1 = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FF9230' : power >= 200 ? '#B8FF47' : '#57FFFC';
-            const statusGrad2 = power >= 3000 ? '#FF9230' : power >= 1000 ? '#FFD166' : power >= 200 ? '#FFD166' : '#67F5A0';
-            const statusGlow  = power >= 3000 ? 'rgba(255,69,58,0.28)' : power >= 1000 ? 'rgba(255,146,48,0.28)' : power >= 200 ? 'rgba(184,255,71,0.22)' : 'rgba(87,255,252,0.22)';
-            const gaugeGrad1  = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FFD166' : power >= 200 ? '#B8FF47' : '#57FFFC';
-            const gaugeGrad2  = power >= 3000 ? '#FF2D55' : power >= 1000 ? '#FF453A' : power >= 200 ? '#FFD166' : '#4CFA57';
-
-            const radius       = 42;
-            const circumference = 2 * Math.PI * radius;
-            const progress     = Math.min((power || 0) / 5000, 1);
-            const dashOffset   = circumference - (progress * circumference);
-
-            const roomName = variables.room_name || 'Energy';
-
-            /* -------------------------------------------------------
-             * Styles
-             * ------------------------------------------------------- */
-
-            const noHoverStyle = `
-              :host {
-                --ha-card-box-shadow: none !important;
-                --button-card-box-shadow: none !important;
-                --button-card-box-shadow-hover: none !important;
-              }
-              ha-card {
-                background: transparent !important;
-                border: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                pointer-events: none !important;
-                cursor: default !important;
-              }
-              ha-card:hover { box-shadow: none !important; }
-              ha-ripple { display: none !important; }
+            // Power → color + label computation snippet for inner templates (requires powerId + safeNum in scope)
+            const _powerScore = `
+              const power = safeNum(powerId);
+              let color = 'var(--hemma-popup-green-color, #67f5a0)', label = 'Idle';
+              if (power >= 3000)      { color = 'var(--hemma-popup-red-color, #ff453a)';    label = 'Extreme'; }
+              else if (power >= 1000) { color = 'var(--hemma-popup-orange-color, #ff9230)'; label = 'Heavy'; }
+              else if (power >= 200)  { color = 'var(--hemma-popup-yellow-color, #ffd600)'; label = 'Normal'; }
             `;
 
-            const wrapperStyle = `
-              :host {
-                --ha-card-box-shadow: none !important;
-                --button-card-box-shadow: none !important;
-                --button-card-box-shadow-hover: none !important;
-              }
-              ha-card {
-                background: transparent !important;
-                border: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                cursor: default !important;
-              }
-              ha-card:hover { box-shadow: none !important; }
-              ha-ripple { display: none !important; }
-            `;
+            /* ------- Styles (static strings) ------- */
 
-            const contentCardStyle = wrapperStyle + `@media (max-width: 600px) { ha-card { padding-left: 14px !important; padding-right: 14px !important; } }`;
+            const noHoverStyle = [
+              ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+              'ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; pointer-events: none !important; cursor: default !important; }',
+              'ha-card:hover { box-shadow: none !important; }',
+              'ha-ripple { display: none !important; }',
+            ].join('\n');
 
-            const tileTapStyle = `
-              :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
-              ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }
-              ha-card:hover { background: rgba(255,255,255,0.09) !important; transform: translateY(-1px) !important; }
-              ha-ripple { display: none !important; }
-              @keyframes energyFlow {
-                0%   { background-position: 200% 50%; }
-                100% { background-position: 0%   50%; }
-              }
-            `;
+            const wrapperStyle = [
+              ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+              'ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: default !important; }',
+              'ha-card:hover { box-shadow: none !important; }',
+              'ha-ripple { display: none !important; }',
+            ].join('\n');
 
-            const tapStyle = `
-              :host {
-                --ha-card-box-shadow: none !important;
-                --button-card-box-shadow: none !important;
-                --button-card-box-shadow-hover: none !important;
-                pointer-events: auto !important;
-              }
-              ha-card {
-                background: transparent !important;
-                border: none !important;
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                overflow: visible !important;
-              }
-              ha-card #container {
-                transition: opacity 0.18s ease, filter 0.18s ease !important;
-              }
-              ha-card:hover #container {
-                filter: brightness(1.12) saturate(1.08) drop-shadow(0 0 10px rgba(255,255,255,0.05));
-              }
-              ha-ripple { display: none !important; }
-            `;
+            const contentCardStyle = wrapperStyle + '\n@media (max-width: 600px) { ha-card { padding-left: 14px !important; padding-right: 14px !important; } }';
+
+            const tileTapStyle = [
+              ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+              'ha-card { background: var(--hemma-popup-tile-background, rgba(255,255,255,0.07)) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: scale(1) !important; transition: background-color var(--hemma-popup-tile-hover-duration, 0.2s) ease, transform var(--hemma-popup-tile-hover-duration, 0.2s) ease !important; }',
+              'ha-card:hover { background: var(--hemma-popup-tile-hover, rgba(255,255,255,0.09)) !important; transform: scale(var(--hemma-popup-tile-hover-scale, 1.01)) !important; }',
+              'ha-ripple { display: none !important; }',
+              '@keyframes energyFlow { 0% { background-position: 200% 50%; } 100% { background-position: 0% 50%; } }',
+            ].join('\n');
+
+            const tapStyle = [
+              ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; pointer-events: auto !important; }',
+              'ha-card { background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; overflow: visible !important; }',
+              'ha-card #container { transition: opacity 0.18s ease, filter 0.18s ease !important; }',
+              'ha-card:hover #container { filter: brightness(1.12) saturate(1.08) drop-shadow(0 0 10px rgba(255,255,255,0.05)); }',
+              'ha-ripple { display: none !important; }',
+            ].join('\n');
 
             const graphStyle = `
               :host {
@@ -219,215 +154,94 @@ hemma_popup_energy:
                 mask-size: 100% 100%;
               }
 
-              .graph__line {
-                opacity: 0.95;
-                filter: drop-shadow(0 0 3px rgba(255,255,255,0.06));
-              }
+              .graph__line { opacity: 0.95; filter: drop-shadow(0 0 3px rgba(255,255,255,0.06)); }
+              .graph__fill { opacity: 0.42; }
+              .graph.flex { margin-left: 0px !important; margin-right: 0px !important; padding-bottom: 0px !important; }
+              .graph__hover { overflow: visible !important; pointer-events: auto !important; }
 
-              .graph__fill {
-                opacity: 0.42;
-              }
-
-              .graph.flex {
-                margin-left: 0px !important;
-                margin-right: 0px !important;
-                padding-bottom: 0px !important;
-              }
-
-              .graph__hover {
-                overflow: visible !important;
-                pointer-events: auto !important;
-              }
-
-              .graph__labels {
-                overflow: visible !important;
-                opacity: 0 !important;
-                transition: opacity 0.15s ease !important;
-              }
-
-              ha-card:hover .graph__labels {
-                opacity: 1 !important;
-              }
-
-              .graph__label {
-                left: auto !important;
-                right: 0 !important;
-                font-size: 11px !important;
-                font-weight: 500 !important;
-              }
+              .graph__labels { overflow: visible !important; opacity: 0 !important; transition: opacity 0.15s ease !important; }
+              ha-card:hover .graph__labels { opacity: 1 !important; }
+              .graph__label { left: auto !important; right: 0 !important; font-size: 11px !important; font-weight: 500 !important; }
             `;
 
             /* -------------------------------------------------------
-             * Status Badge
+             * Status Badge Pill — LIVE [[[...]]]
              * ------------------------------------------------------- */
-
             const statusBadgeCard = {
               type: 'custom:button-card',
               entity: powerId,
-              name: label,
-              tap_action: { action: 'more-info' },
-              show_icon: false,
-              show_name: true,
-              show_label: false,
-              show_state: false,
-              card_mod: {
-                style: [
-                  ':host {',
-                  '  --ha-card-box-shadow: none !important;',
-                  '  --button-card-box-shadow: none !important;',
-                  '  --button-card-box-shadow-hover: none !important;',
-                  '}',
-                  'ha-card {',
-                  `  background: linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 18%,transparent) 0%, color-mix(in srgb,${statusGrad2} 13%,transparent) 100%) !important;`,
-                  `  border: 1px solid color-mix(in srgb,${statusGrad1} 40%,transparent) !important;`,
-                  '  border-radius: 999px !important;',
-                  '  box-shadow: none !important;',
-                  '  backdrop-filter: none !important;',
-                  '  -webkit-backdrop-filter: none !important;',
-                  '  transition: background 0.2s ease, filter 0.2s ease !important;',
-                  '}',
-                  `ha-card:hover { box-shadow: none !important; background: linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 26%,transparent) 0%, color-mix(in srgb,${statusGrad2} 20%,transparent) 100%) !important; filter: brightness(1.15) saturate(1.08); }`,
-                  'ha-ripple { display: none !important; }',
-                ].join('\n'),
-              },
-              styles: {
-                card: [
-                  {
-                    background: `linear-gradient(135deg, color-mix(in srgb,${statusGrad1} 18%,transparent) 0%, color-mix(in srgb,${statusGrad2} 13%,transparent) 100%)`
-                  },
-                  {
-                    border: `1px solid color-mix(in srgb,${statusGrad1} 40%,transparent)`
-                  },
-                  {
-                    'border-radius': '999px'
-                  },
-                  {
-                    'box-shadow': 'none'
-                  },
-                  {
-                    padding: '8px 15px'
-                  },
-                ],
-
-                name: [
-                  {
-                    'font-size': '15px'
-                  },
-                  {
-                    'font-weight': '500'
-                  },
-                  {
-                    color: color
-                  },
-                  {
-                    'white-space': 'nowrap'
-                  },
-                  {
-                    'font-family': 'var(--primary-font-family,system-ui)'
-                  },
-                ],
-              },
-            };
-
-            /* -------------------------------------------------------
-             * Header Card
-             * ------------------------------------------------------- */
-
-            const makeHeaderStatCard = (entityId, label, kwhValue, costValue, side) => ({
-              type: 'custom:button-card',
-              entity: entityId || powerId,
-              tap_action: entityId ? { action: 'more-info' } : { action: 'none' },
-              show_icon: false, show_name: false, show_label: false, show_state: false,
-              card_mod: { style: entityId ? tapStyle : noHoverStyle },
-              styles: {
-                card: [
-                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
-                  { padding: '0' },
-                ],
-                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }, { 'text-align': 'left' }],
-                custom_fields: { c: [{ 'justify-self': 'start' }] },
-              },
-              custom_fields: {
-                c: `<div style="text-align:left;${side === 'right' ? 'padding-right:6px;' : side === 'left' ? 'padding-left:6px;' : ''}">`
-                  + `<div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.06em;font-weight:500;">${label}</div>`
-                  + '<div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;">'
-                    + `<span style="font-size:22px;">${fmtEnergy(kwhValue)}</span>`
-                    + '<span style="font-size:13px;color:rgba(255,255,255,0.55);">kWh</span>'
-                  + '</div>'
-                  + (fmtCost(costValue) ? `<div style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:5px;">${fmtCost(costValue)}</div>` : '')
-                + '</div>',
-              },
-            });
-
-            // Energy Usage
-            const statsWrapperCard = {
-              type: 'custom:button-card',
-              entity: powerId,
-              tap_action: { action: 'none' },
-              show_icon: false, show_name: false, show_label: false, show_state: false,
-              card_mod: { style: wrapperStyle },
-              styles: {
-                card: [
-                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
-                  { padding: '0' },
-                ],
-                grid: [
-                  { display: 'flex' },
-                  { 'flex-direction': 'row' },
-                  { 'align-items': 'flex-start' },
-                  { 'justify-content': 'flex-start' },
-                  { gap: '0' },
-                ],
-                custom_fields: {
-                  today: [{ flex: '0 0 auto' }, { order: '1' }],
-                  div:   [{ flex: '0 0 auto' }, { 'align-self': 'stretch' }, { order: '2' }],
-                  month: [{ flex: '0 0 auto' }, { order: '3' }],
-                },
-              },
-              custom_fields: {
-                today: { card: makeHeaderStatCard(todayId, 'TODAY', usageToday, costToday, 'right') },
-                div:   '<div style="width:2px;height:100%;background:rgba(255,255,255,0.09);margin:0 12px;"></div>',
-                month: { card: makeHeaderStatCard(monthId, 'MONTH', usageMonth, costMonth, 'left') },
-              },
-            };
-
-            // Gauge Circle
-            const gaugeCard = {
-              type: 'custom:button-card',
-              entity: powerId,
+              triggers_update: [powerId].filter(Boolean),
               tap_action: { action: 'more-info' },
               show_icon: false, show_name: false, show_label: false, show_state: false,
               card_mod: { style: tapStyle },
               styles: {
-                card: [
-                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
-                  { padding: '0' },
-                ],
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+                custom_fields: { c: [{ 'justify-self': 'stretch' }] },
+              },
+              custom_fields: {
+                c: `[[[
+                  const powerId = ${_pid};
+                  ${_safe}
+                  ${_powerScore}
+                  const grad1 = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FF9230' : power >= 200 ? '#B8FF47' : '#57FFFC';
+                  const grad2 = power >= 3000 ? '#FF9230' : power >= 1000 ? '#FFD166' : power >= 200 ? '#FFD166' : '#67F5A0';
+                  return '<div style="background:linear-gradient(135deg,color-mix(in srgb,' + grad1 + ' 18%,transparent) 0%,color-mix(in srgb,' + grad2 + ' 13%,transparent) 100%);border:1px solid color-mix(in srgb,' + grad1 + ' 40%,transparent);border-radius:999px;padding:8px 15px;white-space:nowrap;">'
+                    + '<span style="font-size:15px;font-weight:500;color:' + color + ';font-family:var(--primary-font-family,system-ui);">' + label + '</span>'
+                    + '</div>';
+                ]]]`,
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Power Gauge — LIVE [[[...]]]
+             * ------------------------------------------------------- */
+            const gaugeCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              triggers_update: [powerId].filter(Boolean),
+              tap_action: { action: 'more-info' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: tapStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
                 grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
                 custom_fields: { c: [{ 'justify-self': 'end' }] },
               },
               custom_fields: {
-                c: '<div style="position:relative;width:120px;height:120px;">'
-                  + `<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">`
-                    + '<defs>'
-                      + `<linearGradient id="gaugeGrad" x1="8" y1="50" x2="92" y2="50" gradientUnits="userSpaceOnUse">`
-                        + `<stop offset="0%" stop-color="${gaugeGrad1}"/>`
-                        + `<stop offset="100%" stop-color="${gaugeGrad2}"/>`
-                      + '</linearGradient>'
-                    + '</defs>'
-                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>`
-                    + `<circle cx="50" cy="50" r="${radius}" fill="none" stroke="url(#gaugeGrad)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"/>`
-                  + '</svg>'
-                  + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">'
-                    + '<div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.08em;font-weight:500;">WATT</div>'
-                    + `<div style="color:${color};font-size:28px;font-weight:600;line-height:1;">${fmtPower(power)}</div>`
-                    + '<div style="color:rgba(255,255,255,0.5);font-size:14px;margin-top:-4px;">W</div>'
-                  + '</div>'
-                  + '</div>',
+                c: `[[[
+                  const powerId = ${_pid};
+                  ${_safe}
+                  ${_fmt}
+                  ${_powerScore}
+                  const gaugeGrad1 = power >= 3000 ? '#FF453A' : power >= 1000 ? '#FFD166' : power >= 200 ? '#B8FF47' : '#57FFFC';
+                  const gaugeGrad2 = power >= 3000 ? '#FF2D55' : power >= 1000 ? '#FF453A' : power >= 200 ? '#FFD166' : '#4CFA57';
+                  const circ = 2 * Math.PI * 42;
+                  const dashOffset = circ - Math.min((power || 0) / 5000, 1) * circ;
+                  return '<div style="position:relative;width:120px;height:120px;">'
+                    + '<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">'
+                      + '<defs>'
+                        + '<linearGradient id="gaugeGrad" x1="8" y1="50" x2="92" y2="50" gradientUnits="userSpaceOnUse">'
+                          + '<stop offset="0%" stop-color="' + gaugeGrad1 + '"/>'
+                          + '<stop offset="100%" stop-color="' + gaugeGrad2 + '"/>'
+                        + '</linearGradient>'
+                      + '</defs>'
+                      + '<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>'
+                      + '<circle cx="50" cy="50" r="42" fill="none" stroke="url(#gaugeGrad)" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + dashOffset.toFixed(2) + '"/>'
+                    + '</svg>'
+                    + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">'
+                      + '<div style="font-size:11px;color:var(--hemma-popup-tile-text-muted);letter-spacing:.08em;font-weight:500;">WATT</div>'
+                      + '<div style="color:' + color + ';font-size:28px;font-weight:600;line-height:1;">' + fmtPower(power) + '</div>'
+                      + '<div style="color:var(--hemma-popup-tile-text-muted);font-size:14px;margin-top:-4px;">W</div>'
+                    + '</div>'
+                  + '</div>';
+                ]]]`,
               },
             };
 
-            // Right Column
+            /* -------------------------------------------------------
+             * Right Column — wrapper only
+             * ------------------------------------------------------- */
             const rightColCard = {
               type: 'custom:button-card',
               entity: powerId,
@@ -450,6 +264,76 @@ hemma_popup_energy:
               },
             };
 
+            /* -------------------------------------------------------
+             * Header Stat Cards (Today / Month) — LIVE [[[...]]]
+             * ------------------------------------------------------- */
+            const makeHeaderStatCard = (entityId, labelText, costEntityId, side) => ({
+              type: 'custom:button-card',
+              entity: entityId || powerId,
+              triggers_update: [costEntityId].filter(Boolean),
+              tap_action: entityId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: entityId ? tapStyle : noHoverStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }, { 'text-align': 'left' }],
+                custom_fields: { c: [{ 'justify-self': 'start' }] },
+              },
+              custom_fields: {
+                c: `[[[
+                  const entityId     = ${JSON.stringify(entityId || '')};
+                  const costEntityId = ${JSON.stringify(costEntityId || '')};
+                  const costCurrency = ${_cur};
+                  const labelText    = ${JSON.stringify(labelText)};
+                  const side         = ${JSON.stringify(side)};
+                  ${_safe}
+                  ${_fmt}
+                  const v     = safeNum(entityId);
+                  const costV = safeNum(costEntityId);
+                  const costStr = costV != null ? costCurrency + costV.toFixed(2) : '';
+                  return '<div style="text-align:left;' + (side === 'right' ? 'padding-right:6px;' : side === 'left' ? 'padding-left:6px;' : '') + '">'
+                    + '<div style="font-size:11px;color:var(--hemma-popup-tile-text-muted);letter-spacing:.06em;font-weight:500;">' + labelText + '</div>'
+                    + '<div style="display:flex;align-items:baseline;gap:4px;margin-top:5px;">'
+                      + '<span style="font-size:22px;">' + fmtEnergy(v) + '</span>'
+                      + '<span style="font-size:13px;color:var(--hemma-popup-tile-text-muted);">kWh</span>'
+                    + '</div>'
+                    + (costStr ? '<div style="font-size:13px;color:var(--hemma-popup-tile-text-muted);margin-top:5px;">' + costStr + '</div>' : '')
+                  + '</div>';
+                ]]]`,
+              },
+            });
+
+            /* -------------------------------------------------------
+             * Stats Wrapper (header today/month row) — wrapper only
+             * ------------------------------------------------------- */
+            const statsWrapperCard = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: wrapperStyle },
+              styles: {
+                card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '0' }],
+                grid: [
+                  { display: 'flex' }, { 'flex-direction': 'row' }, { 'align-items': 'flex-start' },
+                  { 'justify-content': 'flex-start' }, { gap: '0' },
+                ],
+                custom_fields: {
+                  today: [{ flex: '0 0 auto' }, { order: '1' }],
+                  div:   [{ flex: '0 0 auto' }, { 'align-self': 'stretch' }, { order: '2' }],
+                  month: [{ flex: '0 0 auto' }, { order: '3' }],
+                },
+              },
+              custom_fields: {
+                today: { card: makeHeaderStatCard(todayId, 'TODAY', costTodayId, 'right') },
+                div:   '<div style="width:2px;height:100%;background:rgba(255,255,255,0.09);margin:0 12px;"></div>',
+                month: { card: makeHeaderStatCard(monthId, 'MONTH', costMonthId, 'left') },
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Header Card — title is static (room name + fixed text)
+             * ------------------------------------------------------- */
             const headerCard = {
               type: 'custom:button-card',
               entity: powerId,
@@ -474,9 +358,9 @@ hemma_popup_energy:
                 },
               },
               custom_fields: {
-                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;text-align:left;">'
+                title: '<div style="font-family:var(--primary-font-family,system-ui);color:var(--hemma-popup-tile-text-primary);text-align:left;">'
                   + `<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">${roomName}</div>`
-                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:2px;">Power · Consumption</div>'
+                  + '<div style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);margin-top:2px;">Power · Consumption</div>'
                   + '<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;margin-bottom:16px;">Energy Usage</div>'
                   + '</div>',
                 right: { card: rightColCard },
@@ -485,15 +369,8 @@ hemma_popup_energy:
             };
 
             /* -------------------------------------------------------
-             * Graph Card
+             * Graph Card — mini-graph-card manages its own reactivity
              * ------------------------------------------------------- */
-
-            const graphColor =
-              power >= 3000 ? '#FF453A' :
-              power >= 1000 ? '#FF9230' :
-              power >= 200  ? '#FFD166' :
-              '#67F5A0';
-
             const graphCard = {
               type: 'custom:mini-graph-card',
               entities: [{ entity: powerId, color: graphColor }],
@@ -506,496 +383,200 @@ hemma_popup_energy:
               height: 70,
               decimals: 0,
               show: {
-                name: false,
-                icon: false,
-                state: false,
-                legend: false,
-                labels: true,
-                extrema: false,
-                fill: 'fade',
-                points: false,
+                name: false, icon: false, state: false,
+                legend: false, labels: true, extrema: false,
+                fill: 'fade', points: false,
               },
               card_mod: { style: graphStyle },
             };
 
             /* -------------------------------------------------------
-            * Stat Tiles
-            * ------------------------------------------------------- */
-
-            const makeStatCard = (
-              entityId,
-              name,
-              value,
-              unit,
-              subLabel,
-              statColor,
-              pct
-            ) => ({
-
-              type: 'custom:button-card',
-
-              entity: entityId || powerId,
-
-              tap_action:
-                entityId
-                  ? { action: 'more-info' }
-                  : { action: 'none' },
-
-              show_icon: false,
-              show_name: false,
-              show_label: false,
-              show_state: false,
-
-              card_mod: {
-                style:
-                  entityId
-                    ? tileTapStyle
-                    : noHoverStyle,
-              },
-
-              styles: {
-                card: [
-                  {
-                    background:'rgba(255,255,255,0.045)',
-                  },
-                  {
-                    border:'none',
-                  },
-                  {
-                    borderRadius:'24px',
-                  },
-                  {
-                    boxShadow:'none',
-                  },
-                  {
-                    backdropFilter:'none',
-                  },
-                  {
-                    WebkitBackdropFilter:'none',
-                  },
-                  {
-                    padding:'18px 18px 16px 18px',
-                  },
-                ],
-
-                grid: [
-                  {
-                    'grid-template-areas':'"c"',
-                  },
-                  {
-                    'grid-template-columns':'1fr',
-                  },
-                ],
-
-                custom_fields: {
-                  c: [
-                    {
-                      'justify-self':'stretch',
-                    },
-                  ],
-                },
-              },
-
-              custom_fields: {
-                c: `
-
-                  <div style="
-                    margin-top:1px;
-
-                    min-width:0;
-                    overflow:hidden;
-                  ">
-
-                    <div style="
-                      display:flex;
-                      justify-content:space-between;
-                      align-items:center;
-
-                      margin-bottom:8px;
-
-                      gap:8px;
-                    ">
-
-                      <span style="
-                        font-size:13px;
-
-                        color:rgba(255,255,255,0.88);
-
-                        font-weight:600;
-
-                        white-space:nowrap;
-                        overflow:hidden;
-                        text-overflow:ellipsis;
-
-                        letter-spacing:.01em;
-                      ">
-                        ${name}
-                      </span>
-
-                      ${
-                        subLabel
-                          ? `
-                            <span style="
-                              font-size:13px;
-
-                              color:${statColor};
-
-                              white-space:nowrap;
-
-                              font-weight:600;
-
-                              letter-spacing:.01em;
-
-                              flex-shrink:0;
-                            ">
-                              ${subLabel}
-                            </span>
-                          `
-                          : ''
-                      }
-
-                    </div>
-
-                    <div style="
-                      display:flex;
-                      align-items:baseline;
-
-                      gap:3px;
-                    ">
-
-                      <span style="
-                        font-size:20px;
-                        font-weight:400;
-
-                        color:#ffffff;
-
-                        line-height:1;
-
-                        white-space:nowrap;
-                      ">
-                        ${value}
-                      </span>
-
-                      <span style="
-                        font-size:12px;
-
-                        color:rgba(255,255,255,0.55);
-
-                        white-space:nowrap;
-                      ">
-                        ${unit}
-                      </span>
-
-                    </div>
-
-                    <div style="
-                      position:relative;
-
-                      height:8px;
-                      width:100%;
-
-                      background:rgba(255,255,255,0.055);
-
-                      border-radius:999px;
-
-                      overflow:hidden;
-
-                      margin-top:10px;
-                    ">
-
-                      <div style="
-                        position:absolute;
-                        inset:0 auto 0 0;
-
-                        width:${Math.max(
-                          0,
-                          Math.min(100, pct)
-                        ).toFixed(1)}%;
-
-                        border-radius:999px;
-
-                        background:
-                          ${
-
-                            /* -------------------------------------------
-                            * CURRENT LIVE POWER
-                            * ------------------------------------------- */
-
-                            name === 'Now'
-
-                              ? (
-
-                                power >= 3000
-
-                                  ? `
-                                    linear-gradient(
-                                      90deg,
-                                      #FF2D55 0%,
-                                      #FF453A 22%,
-                                      #FF7A59 44%,
-                                      #FF4D6D 66%,
-                                      #FF2D55 88%,
-                                      #FF2D55 100%
-                                    )
-                                  `
-
-                                  : power >= 1000
-
-                                    ? `
-                                      linear-gradient(
-                                        90deg,
-                                        #FF7A59 0%,
-                                        #FF9230 22%,
-                                        #FFD166 44%,
-                                        #FFB347 66%,
-                                        #FF7A59 88%,
-                                        #FF7A59 100%
-                                      )
-                                    `
-
-                                    : power >= 200
-
-                                      ? `
-                                        linear-gradient(
-                                          90deg,
-                                          #B8FF47 0%,
-                                          #D6FF47 50%,
-                                          #FFD166 100%
-                                        )
-                                      `
-
-                                      : `
-                                        linear-gradient(
-                                          90deg,
-                                          #57FFFC 0%,
-                                          #54F2A0 35%,
-                                          #65F785 70%,
-                                          #4CFA57 100%
-                                        )
-                                      `
-                              )
-
-                              /* -------------------------------------------
-                              * TODAY + MONTH DYNAMIC THRESHOLDS
-                              * ------------------------------------------- */
-
-                              : pct >= 85
-
-                                ? `
-                                  linear-gradient(
-                                    90deg,
-                                    #FF7A59 0%,
-                                    #FF4D6D 100%
-                                  )
-                                `
-
-                                : pct >= 45
-
-                                  ? `
-                                    linear-gradient(
-                                      90deg,
-                                      #FFD166 0%,
-                                      #FFB347 100%
-                                    )
-                                  `
-
-                                  : `
-                                    linear-gradient(
-                                      90deg,
-                                      #57FFFC 0%,
-                                      #54F2A0 35%,
-                                      #65F785 70%,
-                                      #4CFA57 100%
-                                    )
-                                  `
-                          };
-
-                        background-size: ${name === 'Now' && power >= 1000 ? '200% 100%' : 'auto'};
-                        animation: ${name === 'Now' && power >= 3000 ? 'energyFlow 2s linear infinite' : name === 'Now' && power >= 1000 ? 'energyFlow 3s linear infinite' : 'none'};
-                        transition:
-                          width .35s ease;
-                      "></div>
-
-                    </div>
-
-                  </div>
-                `,
-              },
-            });
-
-            // Tier-aware bar: Idle 0–25% | Normal 25–50% | Heavy 50–85% | Extreme 85–100%
-            const currentPct =
-              power == null ? 0 :
-              power >= 3000 ? Math.min(85 + ((power - 3000) / 2000) * 15, 100) :
-              power >= 1000 ? 50 + ((power - 1000) / 2000) * 35 :
-              power >= 200  ? 25 + ((power - 200)  / 800)  * 25 :
-              (power / 200) * 25;
-
-            const currentStat = makeStatCard(
-              powerId,
-              'Now',
-              fmtPower(power),
-              'W',
-              label,
-              color,
-              currentPct
-            );
-
-            const todayPct =
-              Math.min(
-                (usageToday || 0) / 50 * 100,
-                100
-              );
-
-            const monthPct =
-              Math.min(
-                (usageMonth || 0) / 1500 * 100,
-                100
-              );
-
-            const usageColor = (pct) => {
-
-              if (pct >= 85) {
-                return 'var(--hemma-popup-red-color, #ff453a)';
-              }
-
-              if (pct >= 45) {
-                return 'var(--hemma-popup-orange-color, #ff9230)';
-              }
-
-              return 'var(--hemma-popup-green-color, #67f5a0)';
+             * Stat Tiles — three live tiles: Now, Today, Month
+             * ------------------------------------------------------- */
+
+            // Tile card shared styles (same for all three)
+            const tileCardStyles = {
+              card: [
+                { background: 'rgba(255,255,255,0.045)' }, { border: 'none' }, { borderRadius: '24px' },
+                { boxShadow: 'none' }, { backdropFilter: 'none' }, { WebkitBackdropFilter: 'none' },
+                { padding: '18px 18px 16px 18px' },
+              ],
+              grid: [{ 'grid-template-areas': '"c"' }, { 'grid-template-columns': '1fr' }],
+              custom_fields: { c: [{ 'justify-self': 'stretch' }] },
             };
 
-            const todayStat = makeStatCard(
-              todayId,
-              'Today',
-              fmtEnergy(usageToday),
-              'kWh',
-              fmtCost(costToday),
-              usageColor(todayPct),
-              todayPct
-            );
+            // "Now" tile — LIVE on powerId
+            const currentStat = {
+              type: 'custom:button-card',
+              entity: powerId,
+              tap_action: { action: 'more-info' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: tileTapStyle },
+              styles: tileCardStyles,
+              custom_fields: {
+                c: `[[[
+                  const powerId = ${_pid};
+                  ${_safe}
+                  ${_fmt}
+                  ${_powerScore}
+                  const currentPct =
+                    power == null ? 0 :
+                    power >= 3000 ? Math.min(85 + ((power - 3000) / 2000) * 15, 100) :
+                    power >= 1000 ? 50 + ((power - 1000) / 2000) * 35 :
+                    power >= 200  ? 25 + ((power - 200)  / 800)  * 25 :
+                    (power / 200) * 25;
+                  const pct = Math.max(0, Math.min(100, currentPct));
+                  let gradient;
+                  if (power >= 3000)      gradient = 'linear-gradient(90deg,#FF2D55 0%,#FF453A 22%,#FF7A59 44%,#FF4D6D 66%,#FF2D55 88%,#FF2D55 100%)';
+                  else if (power >= 1000) gradient = 'linear-gradient(90deg,#FF7A59 0%,#FF9230 22%,#FFD166 44%,#FFB347 66%,#FF7A59 88%,#FF7A59 100%)';
+                  else if (power >= 200)  gradient = 'linear-gradient(90deg,#B8FF47 0%,#D6FF47 50%,#FFD166 100%)';
+                  else                    gradient = 'linear-gradient(90deg,#57FFFC 0%,#54F2A0 35%,#65F785 70%,#4CFA57 100%)';
+                  const animated  = power >= 1000;
+                  const animStyle = animated
+                    ? 'background-size:200% 100%;animation:' + (power >= 3000 ? 'energyFlow 2s linear infinite' : 'energyFlow 3s linear infinite') + ';'
+                    : '';
+                  return '<div style="margin-top:1px;min-width:0;overflow:hidden;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">'
+                      + '<span style="font-size:13px;color:var(--hemma-popup-tile-text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;">Now</span>'
+                      + '<span style="font-size:13px;color:' + color + ';white-space:nowrap;font-weight:600;letter-spacing:.01em;flex-shrink:0;">' + label + '</span>'
+                    + '</div>'
+                    + '<div style="display:flex;align-items:baseline;gap:3px;">'
+                      + '<span style="font-size:20px;font-weight:400;color:var(--hemma-popup-tile-text-primary);line-height:1;white-space:nowrap;">' + fmtPower(power) + '</span>'
+                      + '<span style="font-size:12px;color:var(--hemma-popup-tile-text-muted);white-space:nowrap;">W</span>'
+                    + '</div>'
+                    + '<div style="position:relative;height:8px;width:100%;background:var(--hemma-popup-progress-track, rgba(255,255,255,0.09));border-radius:999px;overflow:hidden;margin-top:10px;">'
+                      + '<div style="position:absolute;inset:0 auto 0 0;width:' + pct.toFixed(1) + '%;border-radius:999px;background:' + gradient + ';' + animStyle + 'transition:width .35s ease;"></div>'
+                    + '</div>'
+                  + '</div>';
+                ]]]`,
+              },
+            };
 
-            const monthStat = makeStatCard(
-              monthId,
-              'Month',
-              fmtEnergy(usageMonth),
-              'kWh',
-              fmtCost(costMonth),
-              usageColor(monthPct),
-              monthPct
-            );
+            // "Today" tile — LIVE on todayId + costTodayId
+            const todayStat = {
+              type: 'custom:button-card',
+              entity: todayId || powerId,
+              triggers_update: [costTodayId].filter(Boolean),
+              tap_action: todayId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: todayId ? tileTapStyle : noHoverStyle },
+              styles: tileCardStyles,
+              custom_fields: {
+                c: `[[[
+                  const todayId     = ${_tid};
+                  const costTodayId = ${_ctid};
+                  const costCurrency = ${_cur};
+                  ${_safe}
+                  ${_fmt}
+                  const v     = safeNum(todayId);
+                  const costV = safeNum(costTodayId);
+                  const costStr = costV != null ? costCurrency + costV.toFixed(2) : '';
+                  const pct = Math.max(0, Math.min(100, (v || 0) / 50 * 100));
+                  const color = pct >= 85 ? 'var(--hemma-popup-red-color, #ff453a)' : pct >= 45 ? 'var(--hemma-popup-orange-color, #ff9230)' : 'var(--hemma-popup-green-color, #67f5a0)';
+                  const gradient = pct >= 85
+                    ? 'linear-gradient(90deg,#FF7A59 0%,#FF4D6D 100%)'
+                    : pct >= 45
+                    ? 'linear-gradient(90deg,#FFD166 0%,#FFB347 100%)'
+                    : 'linear-gradient(90deg,#57FFFC 0%,#54F2A0 35%,#65F785 70%,#4CFA57 100%)';
+                  return '<div style="margin-top:1px;min-width:0;overflow:hidden;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">'
+                      + '<span style="font-size:13px;color:var(--hemma-popup-tile-text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;">Today</span>'
+                      + (costStr ? '<span style="font-size:13px;color:' + color + ';white-space:nowrap;font-weight:600;letter-spacing:.01em;flex-shrink:0;">' + costStr + '</span>' : '')
+                    + '</div>'
+                    + '<div style="display:flex;align-items:baseline;gap:3px;">'
+                      + '<span style="font-size:20px;font-weight:400;color:var(--hemma-popup-tile-text-primary);line-height:1;white-space:nowrap;">' + fmtEnergy(v) + '</span>'
+                      + '<span style="font-size:12px;color:var(--hemma-popup-tile-text-muted);white-space:nowrap;">kWh</span>'
+                    + '</div>'
+                    + '<div style="position:relative;height:8px;width:100%;background:var(--hemma-popup-progress-track, rgba(255,255,255,0.09));border-radius:999px;overflow:hidden;margin-top:10px;">'
+                      + '<div style="position:absolute;inset:0 auto 0 0;width:' + pct.toFixed(1) + '%;border-radius:999px;background:' + gradient + ';transition:width .35s ease;"></div>'
+                    + '</div>'
+                  + '</div>';
+                ]]]`,
+              },
+            };
 
-            const isMobile =
-              typeof window !== 'undefined' &&
-              window.innerWidth <= 600;
+            // "Month" tile — LIVE on monthId + costMonthId
+            const monthStat = {
+              type: 'custom:button-card',
+              entity: monthId || powerId,
+              triggers_update: [costMonthId].filter(Boolean),
+              tap_action: monthId ? { action: 'more-info' } : { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: monthId ? tileTapStyle : noHoverStyle },
+              styles: tileCardStyles,
+              custom_fields: {
+                c: `[[[
+                  const monthId     = ${_mid};
+                  const costMonthId = ${_cmid};
+                  const costCurrency = ${_cur};
+                  ${_safe}
+                  ${_fmt}
+                  const v     = safeNum(monthId);
+                  const costV = safeNum(costMonthId);
+                  const costStr = costV != null ? costCurrency + costV.toFixed(2) : '';
+                  const pct = Math.max(0, Math.min(100, (v || 0) / 1500 * 100));
+                  const color = pct >= 85 ? 'var(--hemma-popup-red-color, #ff453a)' : pct >= 45 ? 'var(--hemma-popup-orange-color, #ff9230)' : 'var(--hemma-popup-green-color, #67f5a0)';
+                  const gradient = pct >= 85
+                    ? 'linear-gradient(90deg,#FF7A59 0%,#FF4D6D 100%)'
+                    : pct >= 45
+                    ? 'linear-gradient(90deg,#FFD166 0%,#FFB347 100%)'
+                    : 'linear-gradient(90deg,#57FFFC 0%,#54F2A0 35%,#65F785 70%,#4CFA57 100%)';
+                  return '<div style="margin-top:1px;min-width:0;overflow:hidden;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">'
+                      + '<span style="font-size:13px;color:var(--hemma-popup-tile-text-primary);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;">Month</span>'
+                      + (costStr ? '<span style="font-size:13px;color:' + color + ';white-space:nowrap;font-weight:600;letter-spacing:.01em;flex-shrink:0;">' + costStr + '</span>' : '')
+                    + '</div>'
+                    + '<div style="display:flex;align-items:baseline;gap:3px;">'
+                      + '<span style="font-size:20px;font-weight:400;color:var(--hemma-popup-tile-text-primary);line-height:1;white-space:nowrap;">' + fmtEnergy(v) + '</span>'
+                      + '<span style="font-size:12px;color:var(--hemma-popup-tile-text-muted);white-space:nowrap;">kWh</span>'
+                    + '</div>'
+                    + '<div style="position:relative;height:8px;width:100%;background:var(--hemma-popup-progress-track, rgba(255,255,255,0.09));border-radius:999px;overflow:hidden;margin-top:10px;">'
+                      + '<div style="position:absolute;inset:0 auto 0 0;width:' + pct.toFixed(1) + '%;border-radius:999px;background:' + gradient + ';transition:width .35s ease;"></div>'
+                    + '</div>'
+                  + '</div>';
+                ]]]`,
+              },
+            };
+
+            /* -------------------------------------------------------
+             * Stats Grid Card
+             * ------------------------------------------------------- */
+            const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
 
             const statsCard = {
               type: 'custom:button-card',
-
               entity: powerId,
-
-              tap_action: {
-                action: 'none',
-              },
-
-              show_icon: false,
-              show_name: false,
-              show_label: false,
-              show_state: false,
-
-              card_mod: {
-                style: contentCardStyle,
-              },
-
+              tap_action: { action: 'none' },
+              show_icon: false, show_name: false, show_label: false, show_state: false,
+              card_mod: { style: contentCardStyle },
               styles: {
                 card: [
-                  {
-                    background: 'transparent',
-                  },
-                  {
-                    border: 'none',
-                  },
-                  {
-                    'box-shadow': 'none',
-                  },
-                  {
-                    padding: '4px 28px 20px 28px',
-                  },
+                  { background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' },
+                  { padding: '4px 28px 20px 28px' },
                 ],
-
                 grid: [
-                  {
-                    'grid-template-areas':
-                      isMobile
-                        ? '"stat1 stat2" "stat3 stat3"'
-                        : '"stat1 stat2 stat3"',
-                  },
-                  {
-                    'grid-template-columns':
-                      isMobile
-                        ? '1fr 1fr'
-                        : 'repeat(3, 1fr)',
-                  },
-                  {
-                    gap: '8px',
-                  },
-                  {
-                    'align-items': 'start',
-                  },
+                  { 'grid-template-areas': isMobile ? '"stat1 stat2" "stat3 stat3"' : '"stat1 stat2 stat3"' },
+                  { 'grid-template-columns': isMobile ? '1fr 1fr' : 'repeat(3, 1fr)' },
+                  { gap: '8px' },
+                  { 'align-items': 'start' },
                 ],
-
                 custom_fields: {
-                  stat1: [
-                    {
-                      'justify-self': 'stretch',
-                    },
-                  ],
-
-                  stat2: [
-                    {
-                      'justify-self': 'stretch',
-                    },
-                  ],
-
-                  stat3: [
-                    {
-                      'justify-self': 'stretch',
-                    },
-                  ],
+                  stat1: [{ 'justify-self': 'stretch' }],
+                  stat2: [{ 'justify-self': 'stretch' }],
+                  stat3: [{ 'justify-self': 'stretch' }],
                 },
               },
-
               custom_fields: {
-                stat1: {
-                  card: currentStat,
-                },
-
-                stat2: {
-                  card: todayStat,
-                },
-
-                stat3: {
-                  card: monthStat,
-                },
+                stat1: { card: currentStat },
+                stat2: { card: todayStat },
+                stat3: { card: monthStat },
               },
             };
 
-            const _r = {
+            return {
               type: 'vertical-stack',
-              cards: [
-                headerCard,
-                graphCard,
-                statsCard,
-              ],
+              cards: [headerCard, graphCard, statsCard],
             };
-
-            window._hc[_ck] = {
-              h: _ch,
-              r: _r,
-            };
-
-            return _r;
           ]]]
 
 

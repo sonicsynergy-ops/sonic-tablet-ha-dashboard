@@ -18,6 +18,19 @@
 #   - input_select.hemma_thermostat_mode: Heat/Cool mode selector
 #   - sensor.hemma_mobile_dynamic_background: Shared dynamic mobile backgrounds (morning/afternoon/night)
 #
+# NETWORK RESTART CONFIRMATION (used by hemma_popup_network action tiles):
+#   - input_boolean.hemma_restart_confirm_1: Confirm state for action button 1
+#   - input_boolean.hemma_restart_confirm_2: Confirm state for action button 2
+#   - input_boolean.hemma_restart_done_1: Done/success state for action button 1 (auto-clears after 3s)
+#   - input_boolean.hemma_restart_done_2: Done/success state for action button 2 (auto-clears after 3s)
+#   - script.hemma_restart_toggle: Handles Restart → Confirm → Done flow for network action tiles
+#
+#   Wire up in your popup variables:
+#     action_1_confirm_helper: input_boolean.hemma_restart_confirm_1
+#     action_1_done_helper: input_boolean.hemma_restart_done_1
+#     action_2_confirm_helper: input_boolean.hemma_restart_confirm_2
+#     action_2_done_helper: input_boolean.hemma_restart_done_2
+#
 # OPTIONAL: Adjust min/max values for input_number to match your climate needs.
 # ============================================================================
 
@@ -37,6 +50,22 @@ input_boolean:
   hemma_motion_badges:
     name: Motion Badges
     initial: on
+
+  hemma_restart_confirm_1:
+    name: Network Restart Confirm 1
+    initial: off
+
+  hemma_restart_confirm_2:
+    name: Network Restart Confirm 2
+    initial: off
+
+  hemma_restart_done_1:
+    name: Network Restart Done 1
+    initial: off
+
+  hemma_restart_done_2:
+    name: Network Restart Done 2
+    initial: off
 
 input_text:
   # Motion sensor entity IDs for navbar badges (desktop + mobile).
@@ -158,7 +187,69 @@ template:
             var(--hemma-badge-climate-color)
           {% endif %}
 
+      # Counts Plex items added in the last 7 days — drives the Recently Added badge.
+      # Requires the plex_recently_added HACS custom component:
+      # https://github.com/NemesisRE/sensor.plex_recently_added
+      # Configure sensor.recently_added_movies and sensor.recently_added_tv in your sensor config.
+      - name: "Plex Recently Added Count"
+        unique_id: plex_recently_added_count
+        state: >
+          {% set movies = state_attr('sensor.recently_added_movies', 'data') %}
+          {% set tv = state_attr('sensor.recently_added_tv', 'data') %}
+          {% set m_items = movies[1:] if movies and movies | length > 1 else [] %}
+          {% set tv_items = tv[1:] if tv and tv | length > 1 else [] %}
+          {% set all_items = m_items + tv_items %}
+          {% set cutoff = (utcnow() - timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ') %}
+          {% set ns = namespace(count=0) %}
+          {% for item in all_items %}
+            {% if item.airdate is defined and item.airdate > cutoff %}
+              {% set ns.count = ns.count + 1 %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.count }}
+
 script:
+  hemma_restart_toggle:
+    alias: "Hemma - Restart Toggle"
+    description: >
+      One-button handler: first tap enters confirm mode, second tap
+      restarts the device and shows a done state, tapping done dismisses it.
+    mode: single
+    fields:
+      button_entity:
+        required: true
+      helper_entity:
+        required: true
+      done_entity:
+        required: false
+    sequence:
+      - choose:
+          - conditions:
+              - "{{ done_entity | default('') != '' and is_state(done_entity | default('x'), 'on') }}"
+            sequence:
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: "{{ done_entity }}"
+          - conditions:
+              - "{{ is_state(helper_entity, 'on') }}"
+            sequence:
+              - service: button.press
+                target:
+                  entity_id: "{{ button_entity }}"
+              - if:
+                  - "{{ done_entity | default('') != '' }}"
+                then:
+                  - service: input_boolean.turn_on
+                    target:
+                      entity_id: "{{ done_entity }}"
+              - service: input_boolean.turn_off
+                target:
+                  entity_id: "{{ helper_entity }}"
+        default:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: "{{ helper_entity }}"
+
   hemma_light_smart_toggle:
     alias: "Hemma - Smart Light Toggle"
     description: >
@@ -209,6 +300,30 @@ script:
                   entity_id: "{{ light_entity }}"
 
 automation:
+  - alias: "Hemma - Auto clear restart done state 1"
+    id: hemma_auto_clear_restart_done_1
+    trigger:
+      - platform: state
+        entity_id: input_boolean.hemma_restart_done_1
+        to: "on"
+    action:
+      - delay: "00:00:03"
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hemma_restart_done_1
+
+  - alias: "Hemma - Auto clear restart done state 2"
+    id: hemma_auto_clear_restart_done_2
+    trigger:
+      - platform: state
+        entity_id: input_boolean.hemma_restart_done_2
+        to: "on"
+    action:
+      - delay: "00:00:03"
+      - service: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hemma_restart_done_2
+
   # Auto-expand the media row when media is actively playing.
   # Triggers on HA startup (handles page-load defaults) and whenever
   # any media player begins playing. Only acts if the row is currently

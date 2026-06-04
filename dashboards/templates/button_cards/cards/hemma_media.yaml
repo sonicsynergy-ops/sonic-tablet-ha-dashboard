@@ -94,6 +94,7 @@ hemma_media:
       return s ? cap(s) : "Off";
     ]]]
 
+
   tap_action:
     action: more-info
   hold_action:
@@ -119,19 +120,141 @@ hemma_media:
     card:
       - background-size: cover
       - background-position: center
+      - --hemma-media-artwork-overlay: |
+          [[[
+            if (String(entity?.state || "").toLowerCase() !== "playing") return "var(--hemma-active-overlay-opacity, 0)";
+            const a = entity?.attributes || {};
+            const id = entity?.entity_id || '';
+            const type = String(a.media_content_type || '').toLowerCase();
+            const app = String(a.app_name || '').trim();
+            const title = (a.media_title || a.title || '').trim();
+            const source = (a.source || a.media_channel || '').trim();
+            const isSonos = id.includes('sonos') || (a.friendly_name || '').toLowerCase().includes('sonos');
+            const bareInputs = ['tv','hdmi','arc','hdmi arc','optical','line-in','line in'];
+            let looksLikeBareInput = false;
+            if (isSonos && title) {
+              const tLow = title.toLowerCase();
+              looksLikeBareInput = bareInputs.includes(tLow) || (!!source && tLow === source.toLowerCase());
+            }
+            const isYouTube = app.toLowerCase().includes('youtube');
+            const pic = isYouTube
+              ? (states['sensor.youtube_watching']?.attributes?.thumbnail || a.entity_picture || '')
+              : (a.entity_picture || '');
+            const hasRichMeta = !!(a.media_series_title || a.media_episode_title);
+            const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
+            const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
+            const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+            return hasArtwork ? (isMobile ? "0.3" : "0.4") : "var(--hemma-active-overlay-opacity, 0)";
+          ]]]
+      - --hemma-media-name-color: |
+          [[[
+            const a = entity?.attributes || {};
+            const id = entity?.entity_id || '';
+            const s = String(entity?.state || '').toLowerCase();
+            const activeStates = ['on','open','opening','playing','cleaning','returning','cool','heat','washing','rinsing','spinning','drying','running','active','problem'];
+            if (!activeStates.includes(s)) return 'var(--hemma-entity-name)';
+            const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+            if (s !== 'playing') return isMobile ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.97)';
+            const type = String(a.media_content_type || '').toLowerCase();
+            const app = String(a.app_name || '').trim();
+            const title = (a.media_title || a.title || '').trim();
+            const source = (a.source || a.media_channel || '').trim();
+            const isSonos = id.includes('sonos') || (a.friendly_name || '').toLowerCase().includes('sonos');
+            const bareInputs = ['tv','hdmi','arc','hdmi arc','optical','line-in','line in'];
+            let looksLikeBareInput = false;
+            if (isSonos && title) {
+              const tLow = title.toLowerCase();
+              looksLikeBareInput = bareInputs.includes(tLow) || (!!source && tLow === source.toLowerCase());
+            }
+            const isYouTube = app.toLowerCase().includes('youtube');
+            const pic = isYouTube
+              ? (states['sensor.youtube_watching']?.attributes?.thumbnail || a.entity_picture || '')
+              : (a.entity_picture || '');
+            const hasRichMeta = !!(a.media_series_title || a.media_episode_title);
+            const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
+            const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
+            if (hasArtwork) return 'rgba(255,255,255,0.95)';
+            return isMobile ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.95)';
+          ]]]
+      - --hemma-media-state-color: |
+          [[[
+            const a = entity?.attributes || {};
+            const id = entity?.entity_id || '';
+            const s = String(entity?.state || '').toLowerCase();
+            const activeStates = ['on','open','opening','playing','cleaning','returning','cool','heat','washing','rinsing','spinning','drying','running','active','problem'];
+            if (!activeStates.includes(s)) return 'var(--hemma-entity-state)';
+            const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+            if (s !== 'playing') return isMobile ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)';
+            const type = String(a.media_content_type || '').toLowerCase();
+            const app = String(a.app_name || '').trim();
+            const title = (a.media_title || a.title || '').trim();
+            const source = (a.source || a.media_channel || '').trim();
+            const isSonos = id.includes('sonos') || (a.friendly_name || '').toLowerCase().includes('sonos');
+            const bareInputs = ['tv','hdmi','arc','hdmi arc','optical','line-in','line in'];
+            let looksLikeBareInput = false;
+            if (isSonos && title) {
+              const tLow = title.toLowerCase();
+              looksLikeBareInput = bareInputs.includes(tLow) || (!!source && tLow === source.toLowerCase());
+            }
+            const isYouTube = app.toLowerCase().includes('youtube');
+            const pic = isYouTube
+              ? (states['sensor.youtube_watching']?.attributes?.thumbnail || a.entity_picture || '')
+              : (a.entity_picture || '');
+            const hasRichMeta = !!(a.media_series_title || a.media_episode_title);
+            const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
+            const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
+            if (hasArtwork) return 'rgba(255,255,255,0.80)';
+            return isMobile ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.80)';
+          ]]]
+      - --hemma-media-icon-bg: |
+          [[[
+            const a = entity?.attributes || {};
+            const id = entity?.entity_id || '';
+            if (entity?.state !== 'playing') return 'var(--hemma-icon-circle-bg, rgba(255,255,255,0.10))';
+            const type = String(a.media_content_type || '').toLowerCase();
+            const app = String(a.app_name || '').trim();
+            const title = (a.media_title || a.title || '').trim();
+            const source = (a.source || a.media_channel || '').trim();
+            const isSonos = id.includes('sonos') || (a.friendly_name || '').toLowerCase().includes('sonos');
+            const bareInputs = ['tv','hdmi','arc','hdmi arc','optical','line-in','line in'];
+            let looksLikeBareInput = false;
+            if (isSonos && title) {
+              const tLow = title.toLowerCase();
+              looksLikeBareInput = bareInputs.includes(tLow) || (!!source && tLow === source.toLowerCase());
+            }
+            const isYouTube = app.toLowerCase().includes('youtube');
+            const pic = isYouTube
+              ? (states['sensor.youtube_watching']?.attributes?.thumbnail || a.entity_picture || '')
+              : (a.entity_picture || '');
+            const hasRichMeta = !!(a.media_series_title || a.media_episode_title);
+            const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
+            const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
+            return hasArtwork ? 'rgba(255,255,255,0.15)' : 'var(--hemma-icon-color-current)';
+          ]]]
       - background-image: |
           [[[
-            const state = String(entity?.state || "").toLowerCase();
-            if (state !== "playing") return "none";
-            const appName = String(entity?.attributes?.app_name || "").toLowerCase();
-            const isYouTube = appName.includes("youtube");
-            let pic = "";
-            if (isYouTube) {
-              pic = states['sensor.youtube_watching']?.attributes?.thumbnail || entity?.attributes?.entity_picture || "";
-            } else {
-              pic = entity?.attributes?.entity_picture || "";
+            if (String(entity?.state || "").toLowerCase() !== "playing") return "none";
+            const a = entity?.attributes || {};
+            const id = entity?.entity_id || '';
+            const type = String(a.media_content_type || '').toLowerCase();
+            const app = String(a.app_name || '').trim();
+            const title = (a.media_title || a.title || '').trim();
+            const source = (a.source || a.media_channel || '').trim();
+            const isSonos = id.includes('sonos') || (a.friendly_name || '').toLowerCase().includes('sonos');
+            const bareInputs = ['tv','hdmi','arc','hdmi arc','optical','line-in','line in'];
+            let looksLikeBareInput = false;
+            if (isSonos && title) {
+              const tLow = title.toLowerCase();
+              looksLikeBareInput = bareInputs.includes(tLow) || (!!source && tLow === source.toLowerCase());
             }
-            if (!pic) return "none";
+            const isYouTube = app.toLowerCase().includes('youtube');
+            const pic = isYouTube
+              ? (states['sensor.youtube_watching']?.attributes?.thumbnail || a.entity_picture || '')
+              : (a.entity_picture || '');
+            const hasRichMeta = !!(a.media_series_title || a.media_episode_title);
+            const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
+            const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
+            if (!hasArtwork) return "none";
             const path = pic.startsWith("/") ? `${window.location.origin}${pic}` : pic;
             return `linear-gradient(rgba(70, 70, 70, 0.7), rgba(70, 70, 70, 0.7)), url('${path}')`;
           ]]]
@@ -149,19 +272,49 @@ hemma_media:
       - overflow: hidden
       - text-overflow: ellipsis
 
-  extra_styles: |
-    #img-cell { overflow: visible !important; }
-    @media (hover: hover) {
-      #img-cell:hover img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-        transform: scale(1.05);
+  card_mod:
+    style: |
+      ha-card::after {
+        opacity: var(--hemma-media-artwork-overlay) !important;
       }
+
+  extra_styles: |
+    #name { color: var(--hemma-media-name-color, rgba(255,255,255,0.9)) !important; }
+    #state { color: var(--hemma-media-state-color, rgba(255,255,255,0.65)) !important; }
+    #img-cell {
+      position: relative;
+      border-radius: 50% !important;
+      background: var(--hemma-media-icon-bg, var(--hemma-icon-circle-bg, rgba(255,255,255,0.10))) !important;
+      width: 44px !important;
+      height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
+    #img-cell::before { opacity: 0 !important; }
+    #img-cell img {
+      width: 68% !important;
+      height: 68% !important;
+      max-width: 68% !important;
+      max-height: 68% !important;
+      object-fit: contain !important;
+      flex: none !important;
+    }
+    #img-cell ha-icon {
+      --mdc-icon-size: 26px !important;
+      flex: none !important;
+      color: rgba(255,255,255,1.0) !important;
+    }
+    #icon { color: rgba(255,255,255,1.0) !important; }
+    @media (max-width: 767px) and (orientation: portrait) {
+      #img-cell { width: 38px !important; height: 38px !important; }
+      #img-cell ha-icon { --mdc-icon-size: 23px !important; }
+      #toggle { filter: invert(var(--hemma-toggle-invert, 0)); }
+    }
+    @media (hover: hover) {
+      #img-cell:hover { filter: brightness(1.15); transform: scale(1.03); transition: filter 0.15s ease, transform 0.15s ease; }
     }
     @media (hover: none) {
-      #img-cell:active img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-        transform: scale(1.05);
-      }
+      #img-cell:active { filter: brightness(1.15); transform: scale(1.03); }
     }

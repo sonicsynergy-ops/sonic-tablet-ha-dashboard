@@ -110,7 +110,7 @@ cards:
           box-shadow: var(--hemma-nav-shadow, 0 22px 50px rgba(0,0,0,0.32)) !important;
           overflow: hidden !important;
           --navbar-primary-color: var(--hemma-nav-icon, rgba(255,255,255,.85)) !important;
-          --navbar-active-color:  var(--hemma-nav-icon-active, rgba(255,255,255,1)) !important;
+          --navbar-active-color:  var(--hemma-navbar-active-color, #ff9230) !important;
           --navbar-route-background: transparent !important;
           --navbar-route-active-background: transparent !important;
           --navbar-active-background: transparent !important;
@@ -150,7 +150,7 @@ cards:
           gap: 0 !important;
           padding: 0 !important;
           margin: 0 !important;
-          --navbar-route-icon-size: 28px !important;
+          --navbar-route-icon-size: 26px !important;
         }
 
         .route{
@@ -210,6 +210,10 @@ cards:
           box-shadow: none !important;
         }
 
+        .route .image img {
+          filter: var(--hemma-nav-img-filter, none) !important;
+        }
+
         .route.active .icon, .route.active .image,
         .icon.active, .image.active{
           opacity: 1 !important;
@@ -230,7 +234,52 @@ cards:
           margin: 0 !important;
           padding: 0 !important;
         }
-        .route.active .label{ opacity: 1 !important; }
+        .route.active .label{
+          opacity: 1 !important;
+          color: var(--navbar-active-color) !important;
+        }
+
+        /* Active route: colorize SVG icon via ::after on .button (.image may be <img>, no ::before) */
+        .route.active .image,
+        .route.active .image img {
+          opacity: 0 !important;
+        }
+        .route.active .button {
+          position: relative !important;
+        }
+        .route.active .button::after {
+          content: '' !important;
+          position: absolute !important;
+          width: var(--navbar-route-icon-size, 26px) !important;
+          height: var(--navbar-route-icon-size, 26px) !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          background-color: var(--navbar-active-color) !important;
+          -webkit-mask-position: center !important;
+          mask-position: center !important;
+          -webkit-mask-repeat: no-repeat !important;
+          mask-repeat: no-repeat !important;
+          -webkit-mask-size: contain !important;
+          mask-size: contain !important;
+          -webkit-mask-image: linear-gradient(transparent, transparent) !important;
+          mask-image: linear-gradient(transparent, transparent) !important;
+          pointer-events: none !important;
+          z-index: 2 !important;
+        }
+        .route.active .button:has(img[src*="home.svg"])::after {
+          -webkit-mask-image: url('/local/hemma/icons/home.svg') !important;
+          mask-image: url('/local/hemma/icons/home.svg') !important;
+        }
+
+        .route.active .button:has(img[src*="living-room.svg"])::after {
+          -webkit-mask-image: url('/local/hemma/icons/living-room.svg') !important;
+          mask-image: url('/local/hemma/icons/living-room.svg') !important;
+        }
+        .route.active .button:has(img[src*="scenes.svg"])::after {
+          -webkit-mask-image: url('/local/hemma/icons/scenes.svg') !important;
+          mask-image: url('/local/hemma/icons/scenes.svg') !important;
+        }
 
         ha-ripple{ display:none !important; }
         .mdc-ripple-surface::before,
@@ -245,11 +294,11 @@ cards:
         }
 
         .navbar-popup{
-          background: var(--hemma-popup-bg) !important;
-          -webkit-backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          border-radius: var(--hemma-popup-br, 22px) !important;
-          box-shadow: var(--hemma-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
+          background: var(--hemma-navbar-popup-bg) !important;
+          -webkit-backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          border-radius: var(--hemma-navbar-popup-br, 22px) !important;
+          box-shadow: var(--hemma-navbar-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
           padding: 8px !important;
           width: max-content !important;
           max-width: calc(100vw - (var(--hemma-popup-edge) * 2)) !important;
@@ -283,10 +332,10 @@ cards:
           box-sizing: border-box;
           background: linear-gradient(
             to bottom right,
-            var(--hemma-popup-specular-start, rgba(255,255,255,0.32)) 0%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
-            var(--hemma-popup-specular-end, rgba(255,255,255,0.22)) 100%
+            var(--hemma-navbar-popup-specular-start, rgba(255,255,255,0.32)) 0%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
+            var(--hemma-navbar-popup-specular-end, rgba(255,255,255,0.22)) 100%
           );
           -webkit-mask:
             linear-gradient(#fff 0 0) content-box,
@@ -438,9 +487,7 @@ cards:
           user-select: none !important;
         }
 
-        .navbar.mobile{
-          --navbar-route-icon-size: 26px !important;
-        }
+
 
         .navbar.mobile .image,
         .navbar.mobile .image img{
@@ -488,6 +535,104 @@ cards:
           animation: hemma-badge-pulse 3s ease-in-out infinite !important;
         }
 
+        /* === Scroll-collapse === */
+
+        /* Expand */
+        ha-card.navbar-card.mobile{
+          transition:
+            left   0.38s cubic-bezier(.2, 1.2, .64, 1),
+            width  0.34s cubic-bezier(.2, 1.2, .64, 1),
+            height 0.34s cubic-bezier(.2, 1.2, .64, 1) !important;
+        }
+
+        .route{
+          transition:
+            flex    0.3s  cubic-bezier(.3, 1.2, .64, 1),
+            padding 0.25s ease,
+            opacity 0.16s 0.05s ease !important;
+        }
+
+        .route .label{
+          transition:
+            opacity    0.12s ease,
+            font-size  0.12s ease,
+            max-height 0.12s ease !important;
+        }
+
+        /* Collapsed state */
+        :host(.hemma-scrolled) ha-card.navbar-card.mobile{
+          left: 45px !important;
+          bottom: 42px !important;
+          transform: translateX(-50%) !important;
+          width: 44px !important;
+          height: 44px !important;
+          padding: 4px !important;
+          box-sizing: border-box !important;
+          cursor: pointer !important;
+          background: var(--hemma-navbar-icon-small,rgba(255,255,255,0.06)) !important;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08) !important;
+          transition:
+            left   0.25s  cubic-bezier(0, 0, 0.1, 1),
+            width  0.25s cubic-bezier(0, 0, 0.1, 1),
+            height 0.25s cubic-bezier(0, 0, 0.1, 1) !important;
+        }
+
+        /* Home icon overlay */
+        ha-card.navbar-card.mobile::after{
+          content: '' !important;
+          position: absolute !important;
+          inset: 0 !important;
+          background-color: rgba(255,255,255,0.92) !important;
+          -webkit-mask-image: url('/local/hemma/icons/home.svg') !important;
+          mask-image: url('/local/hemma/icons/home.svg') !important;
+          -webkit-mask-position: 38px center !important;
+          mask-position: 38px center !important;
+          -webkit-mask-repeat: no-repeat !important;
+          mask-repeat: no-repeat !important;
+          -webkit-mask-size: 22px 22px !important;
+          mask-size: 22px 22px !important;
+          pointer-events: none !important;
+          z-index: 10 !important;
+          opacity: 0 !important;
+          transition:
+            opacity 0.1s ease,
+            -webkit-mask-position 0s linear,
+            mask-position 0s linear !important;
+        }
+
+        /* Collapse icon */
+        :host(.hemma-scrolled) ha-card.navbar-card.mobile::after{
+          opacity: 1 !important;
+          -webkit-mask-position: 11px center !important;
+          mask-position: 11px center !important;
+          transition:
+            opacity 0s linear,
+            -webkit-mask-position 0.3s cubic-bezier(0, 0, 0.2, 1),
+            mask-position 0.3s cubic-bezier(0, 0, 0.2, 1) !important;
+        }
+
+        /* Collapse routes */
+        :host(.hemma-scrolled) .navbar.mobile .route{
+          flex: 0 0 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          opacity: 0 !important;
+          min-width: 0 !important;
+          pointer-events: none !important;
+          transition:
+            flex    0.28s ease-out,
+            opacity 0.12s ease !important;
+        }
+
+        /* Hide labels */
+        :host(.hemma-scrolled) .navbar.mobile .route .label{
+          opacity: 0 !important;
+          font-size: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+          margin: 0 !important;
+        }
+
       # Buttons (Edit these)
       routes:
         # Home
@@ -500,22 +645,8 @@ cards:
 
         # Rooms (Dropdown Menu)
         - label: Rooms
-          image: >
-            [[[
-              const p = window.location.pathname || '';
-              if (p === '/dashboard-hemma/bedroom') return '/local/hemma/icons/bedroom.svg';
-              if (p === '/dashboard-hemma/kitchen') return '/local/hemma/icons/kitchen.svg';
-              if (p === '/dashboard-hemma/living-room') return '/local/hemma/icons/living-room.svg';
-              return '/local/hemma/icons/living-room.svg';
-            ]]]
-          image_selected: >
-            [[[
-              const p = window.location.pathname || '';
-              if (p === '/dashboard-hemma/bedroom') return '/local/hemma/icons/bedroom.svg';
-              if (p === '/dashboard-hemma/kitchen') return '/local/hemma/icons/kitchen.svg';
-              if (p === '/dashboard-hemma/living-room') return '/local/hemma/icons/living-room.svg';
-              return '/local/hemma/icons/living-room.svg';
-            ]]]
+          image: /local/hemma/icons/living-room.svg
+          image_selected: /local/hemma/icons/living-room.svg
           tap_action:
             action: open-popup
           selected: >
@@ -668,8 +799,8 @@ cards:
           scrollbar-width: none !important;
           -webkit-overflow-scrolling: touch !important;
           justify-content: safe center !important;
-          --navbar-primary-color: var(--hemma-nav-icon, rgba(255,255,255,.78)) !important;
-          --navbar-active-color: var(--hemma-nav-icon-active, rgba(255,255,255,1)) !important;
+          --navbar-primary-color: rgba(255,255,255,0.85) !important;
+          --navbar-active-color: rgba(255,255,255,1) !important;
           --navbar-route-active-background: transparent !important;
           --navbar-route-active-color: inherit !important;
         }
@@ -843,11 +974,11 @@ cards:
         }
 
         .navbar-popup{
-          background: var(--hemma-popup-bg) !important;
-          -webkit-backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          border-radius: var(--hemma-popup-br, 22px) !important;
-          box-shadow: var(--hemma-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
+          background: var(--hemma-navbar-popup-bg) !important;
+          -webkit-backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          border-radius: var(--hemma-navbar-popup-br, 22px) !important;
+          box-shadow: var(--hemma-navbar-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
           padding: 8px !important;
           width: max-content !important;
           max-width: calc(100vw - 24px) !important;
@@ -876,10 +1007,10 @@ cards:
           box-sizing: border-box;
           background: linear-gradient(
             to bottom right,
-            var(--hemma-popup-specular-start, rgba(255,255,255,0.32)) 0%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
-            var(--hemma-popup-specular-end, rgba(255,255,255,0.22)) 100%
+            var(--hemma-navbar-popup-specular-start, rgba(255,255,255,0.32)) 0%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
+            var(--hemma-navbar-popup-specular-end, rgba(255,255,255,0.22)) 100%
           );
           -webkit-mask:
             linear-gradient(#fff 0 0) content-box,
@@ -1171,8 +1302,8 @@ cards:
           -webkit-overflow-scrolling: touch !important;
           scrollbar-width: none !important;
           justify-content: safe center !important;
-          --navbar-primary-color: var(--hemma-nav-icon, rgba(255,255,255,.78)) !important;
-          --navbar-active-color: var(--hemma-nav-icon-active, rgba(255,255,255,1)) !important;
+          --navbar-primary-color: rgba(255,255,255,0.85) !important;
+          --navbar-active-color: rgba(255,255,255,1) !important;
           --navbar-route-active-background: transparent !important;
           --navbar-route-active-color: inherit !important;
         }
@@ -1345,11 +1476,11 @@ cards:
         }
 
         .navbar-popup{
-          background: var(--hemma-popup-bg) !important;
-          -webkit-backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          backdrop-filter: var(--hemma-popup-blur, blur(20px) saturate(1.1)) !important;
-          border-radius: var(--hemma-popup-br, 22px) !important;
-          box-shadow: var(--hemma-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
+          background: var(--hemma-navbar-popup-bg) !important;
+          -webkit-backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          backdrop-filter: var(--hemma-navbar-popup-blur, blur(20px) saturate(1.1)) !important;
+          border-radius: var(--hemma-navbar-popup-br, 22px) !important;
+          box-shadow: var(--hemma-navbar-popup-shadow, 0 3px 14px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.06)) !important;
           padding: 8px !important;
           width: max-content !important;
           max-width: calc(100vw - 24px) !important;
@@ -1378,10 +1509,10 @@ cards:
           box-sizing: border-box;
           background: linear-gradient(
             to bottom right,
-            var(--hemma-popup-specular-start, rgba(255,255,255,0.32)) 0%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
-            var(--hemma-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
-            var(--hemma-popup-specular-end, rgba(255,255,255,0.22)) 100%
+            var(--hemma-navbar-popup-specular-start, rgba(255,255,255,0.32)) 0%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 45%,
+            var(--hemma-navbar-popup-specular-mid, rgba(255,255,255,0.26)) 55%,
+            var(--hemma-navbar-popup-specular-end, rgba(255,255,255,0.22)) 100%
           );
           -webkit-mask:
             linear-gradient(#fff 0 0) content-box,

@@ -1,17 +1,26 @@
 # Network Speed Card
-# Shows WAN activity as a tier label based on download/upload speeds.
-# The card entity should be the download-speed sensor; set upload_sensor variable
-# to the matching upload-speed sensor.
+# Shows WAN (internet) activity as a tier label based on download/upload speeds.
+# The card entity should be the WAN download-speed sensor; set upload_sensor (or
+# entity_upload) to the matching WAN upload-speed sensor.
+#
+# LAN stat sensors (entity_stat_1–4) are informational only — they appear as tiles
+# in the popup but do NOT affect the badge label or active state. This ensures the
+# card only lights up for actual internet traffic, not local LAN activity (e.g. a
+# local media server stream).
 #
 # Variables:
-#   upload_sensor    - entity ID for the upload speed sensor
+#   upload_sensor    - entity ID for the WAN upload speed sensor
 #   icon             - icon filename (default: wifi)
 #   idle_threshold   - max Mbps (both) to show "Idle" (default: 1)
 #   light_threshold  - max Mbps to show "Light ..." (default: 10)
 #   heavy_threshold  - min Mbps to show "Heavy ..." (default: 50)
 #                      between light and heavy = "Active ..."
+#   action_1_entity  - optional button entity for the first action tile (e.g. button.router_reboot)
+#   action_1_label   - display label for action 1 (falls back to entity friendly name)
+#   action_2_entity  - optional button entity for the second action tile
+#   action_2_label   - display label for action 2
 #
-# Card is visually active (glowing) when max speed >= light_threshold.
+# Card is visually active (glowing) when WAN max speed >= light_threshold.
 
 hemma_network:
   template:
@@ -33,9 +42,21 @@ hemma_network:
     entity_stat_2: null
     entity_stat_3: null
     entity_stat_4: null
+    action_1_entity: null
+    action_1_label: null
+    action_1_status: null
+    action_2_entity: null
+    action_2_label: null
+    action_2_status: null
 
   triggers_update:
     - '[[[ return variables.entity_upload || variables.upload_sensor || "" ]]]'
+    - '[[[ return variables.entity_stat_1 || "" ]]]'
+    - '[[[ return variables.entity_stat_2 || "" ]]]'
+    - '[[[ return variables.entity_stat_3 || "" ]]]'
+    - '[[[ return variables.entity_stat_4 || "" ]]]'
+    - '[[[ return variables.action_1_status || "" ]]]'
+    - '[[[ return variables.action_2_status || "" ]]]'
 
   icon_tap_action:
     action: more-info
@@ -64,13 +85,24 @@ hemma_network:
   # Idle · Light Downloads/Uploads · Active Downloads/Uploads · Heavy Downloads/Uploads
   state_display: >
     [[[
-      const dlId = variables.entity_download || entity?.entity_id;
-      const ulId = variables.entity_upload   || variables.upload_sensor || null;
-      const dl   = parseFloat(states[dlId]?.state);
-      const ul   = parseFloat(ulId ? states[ulId]?.state : null);
-      const dlOk = Number.isFinite(dl);
-      const ulOk = Number.isFinite(ul);
-      const max  = Math.max(dlOk ? dl : 0, ulOk ? ul : 0);
+      const dlId  = variables.entity_download || entity?.entity_id;
+      const ulId  = variables.entity_upload   || variables.upload_sensor || null;
+      const stat1 = variables.entity_stat_1 || null;
+      const stat2 = variables.entity_stat_2 || null;
+      const stat3 = variables.entity_stat_3 || null;
+      const stat4 = variables.entity_stat_4 || null;
+
+      const safe = (id) => { if (!id) return null; const n = parseFloat(states[id]?.state); return isNaN(n) ? null : n; };
+
+      // Tier and direction: WAN sensors only. LAN stat sensors (stat1–4) are
+      // informational (popup tiles) and must not drive the badge label or state.
+      const allVals = [safe(dlId), safe(ulId)].filter(v => v != null);
+      const max = allVals.length > 0 ? Math.max(...allVals) : 0;
+
+      const dl   = safe(dlId);
+      const ul   = safe(ulId);
+      const dlOk = dl != null;
+      const ulOk = ul != null;
 
       const idle  = Number(variables.idle_threshold  ?? 1);
       const light = Number(variables.light_threshold ?? 10);
@@ -84,24 +116,42 @@ hemma_network:
     ]]]
 
   extra_styles: |
+    #img-cell {
+      position: relative;
+      border-radius: 50% !important;
+      background: var(--hemma-icon-circle-bg, rgba(255,255,255,0.10)) !important;
+      width: 44px !important;
+      height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: hidden !important;
+    }
+    #img-cell::before { opacity: 0 !important; }
+    #img-cell img {
+      width: 68% !important;
+      height: 68% !important;
+      max-width: 68% !important;
+      max-height: 68% !important;
+      object-fit: contain !important;
+      flex: none !important;
+    }
+    #img-cell ha-icon {
+      --mdc-icon-size: 26px !important;
+      flex: none !important;
+      color: rgba(255,255,255,1.0) !important;
+    }
+    #icon { color: rgba(255,255,255,1.0) !important; }
+    @media (max-width: 767px) and (orientation: portrait) {
+      #img-cell { width: 38px !important; height: 38px !important; }
+      #img-cell ha-icon { --mdc-icon-size: 23px !important; }
+      #toggle { filter: invert(var(--hemma-toggle-invert, 0)); }
+    }
     @media (hover: hover) {
-      #img-cell:hover {
-        transform: scale(1.05);
-        transition: transform 0.15s ease;
-      }
-      #img-cell:hover img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-      }
+      #img-cell:hover { filter: brightness(1.15); transform: scale(1.03); transition: filter 0.15s ease, transform 0.15s ease; }
     }
     @media (hover: none) {
-      #img-cell:active {
-        transform: scale(1.05);
-      }
-      #img-cell:active img {
-        opacity: 1 !important;
-        filter: brightness(1.2) !important;
-      }
+      #img-cell:active { filter: brightness(1.15); transform: scale(1.03); }
     }
 
   # Heavy: glowing + yellow name color
@@ -110,46 +160,66 @@ hemma_network:
     - operator: template
       value: |
         [[[
-          const dl    = parseFloat(entity?.state);
-          const ul    = parseFloat(states[variables.entity_upload || variables.upload_sensor]?.state);
-          const max   = Math.max(Number.isFinite(dl) ? dl : 0, Number.isFinite(ul) ? ul : 0);
+          const safe = (id) => { if (!id) return null; const n = parseFloat(states[id]?.state); return isNaN(n) ? null : n; };
+          const vals = [
+            safe(variables.entity_download || entity?.entity_id),
+            safe(variables.entity_upload || variables.upload_sensor),
+          ].filter(v => v != null);
+          const max   = vals.length > 0 ? Math.max(...vals) : 0;
           const heavy = Number(variables.heavy_threshold ?? 50);
           return max >= heavy;
         ]]]
       styles:
         card:
-          - background: var(--hemma-entity-background-active)
-          - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
+          - "--hemma-card-bg": "var(--hemma-entity-background-active)"
+          - background-color: "var(--hemma-entity-background-active) !important"
+          - box-shadow: var(--hemma-button-card-box-shadow-active-current, var(--button-card-box-shadow-active, var(--button-card-box-shadow))) !important
+          - --hemma-icon-color-current: var(--hemma-popup-yellow-color, #ffd600)
+          - --hemma-icon-svg-url: "url('/local/hemma/icons/wifi.svg')"
+          - --hemma-icon-use-mask: "1"
+          - --hemma-entity-icon-animation: none
+          - --hemma-icon-circle-bg: var(--hemma-icon-color-current)
         name:
           - color: var(--hemma-entity-name-active, var(--primary-text-color))
         state:
           - color: var(--hemma-entity-state-active-color)
         img_cell:
-          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
-          - filter: var(--hemma-entity-picture-active-filter, none) !important
+          - opacity: "1 !important"
+          - filter: none !important
+          - background: "var(--hemma-popup-yellow-color, #ffd600) !important"
         entity_picture:
-          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
-          - filter: var(--hemma-entity-picture-active-filter, none) !important
+          - opacity: "1 !important"
+          - filter: none !important
     - operator: template
       value: |
         [[[
-          const dl    = parseFloat(entity?.state);
-          const ul    = parseFloat(states[variables.entity_upload || variables.upload_sensor]?.state);
-          const max   = Math.max(Number.isFinite(dl) ? dl : 0, Number.isFinite(ul) ? ul : 0);
+          const safe = (id) => { if (!id) return null; const n = parseFloat(states[id]?.state); return isNaN(n) ? null : n; };
+          const vals = [
+            safe(variables.entity_download || entity?.entity_id),
+            safe(variables.entity_upload || variables.upload_sensor),
+          ].filter(v => v != null);
+          const max   = vals.length > 0 ? Math.max(...vals) : 0;
           const light = Number(variables.light_threshold ?? 10);
           return max >= light;
         ]]]
       styles:
         card:
-          - background: var(--hemma-entity-background-active)
-          - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
+          - "--hemma-card-bg": "var(--hemma-entity-background-active)"
+          - background-color: "var(--hemma-entity-background-active) !important"
+          - box-shadow: var(--hemma-button-card-box-shadow-active-current, var(--button-card-box-shadow-active, var(--button-card-box-shadow))) !important
+          - --hemma-icon-color-current: var(--hemma-popup-primary-color, #00c3d0)
+          - --hemma-icon-svg-url: "url('/local/hemma/icons/wifi.svg')"
+          - --hemma-icon-use-mask: "1"
+          - --hemma-entity-icon-animation: none
+          - --hemma-icon-circle-bg: var(--hemma-icon-color-current)
         name:
-          - color: var(--hemma-entity-name, rgba(255,255,255,0.9))
+          - color: var(--hemma-entity-name-active, var(--primary-text-color))
         state:
           - color: var(--hemma-entity-state-active-color)
         img_cell:
-          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
-          - filter: var(--hemma-entity-picture-active-filter, none) !important
+          - opacity: "1 !important"
+          - filter: none !important
+          - background: "var(--hemma-popup-primary-color, #00c3d0) !important"
         entity_picture:
-          - opacity: var(--hemma-entity-picture-active-opacity, 1) !important
-          - filter: var(--hemma-entity-picture-active-filter, none) !important
+          - opacity: "1 !important"
+          - filter: none !important

@@ -16,6 +16,20 @@ hemma_popup_network:
     entity_stat_3: null
     entity_stat_4: null
 
+    action_1_entity: null
+    action_1_label: null
+    action_2_entity: null
+    action_2_label: null
+
+    action_1_status: null
+    action_2_status: null
+
+    action_1_confirm_helper: null
+    action_2_confirm_helper: null
+
+    action_1_done_helper: null
+    action_2_done_helper: null
+
     idle_threshold: 1
     light_threshold: 10
     heavy_threshold: 50
@@ -109,9 +123,11 @@ hemma_popup_network:
 
             const tileTapStyle = `
               :host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }
-              ha-card { background: rgba(255,255,255,0.07) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: translateY(0) !important; transition: background-color 0.2s ease, transform 0.2s ease !important; }
-              ha-card:hover { background: rgba(255,255,255,0.09) !important; transform: translateY(-1px) !important; }
+              ha-card { background: var(--hemma-popup-tile-background, rgba(255,255,255,0.07)) !important; border: none !important; border-radius: 24px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transform: scale(1) !important; transition: background-color var(--hemma-popup-tile-hover-duration, 0.2s) ease, transform var(--hemma-popup-tile-hover-duration, 0.2s) ease !important; }
+              ha-card:hover { background: var(--hemma-popup-tile-hover, rgba(255,255,255,0.09)) !important; transform: scale(var(--hemma-popup-tile-hover-scale, 1.01)) !important; }
               ha-ripple { display: none !important; }
+              @keyframes hemma-action-swap { from { opacity:0; } to { opacity:1; } }
+              @keyframes hemma-ca-in { from { opacity:0; } to { opacity:1; } }
             `;
 
             const tapStyle = `
@@ -282,7 +298,6 @@ hemma_popup_network:
 
             const dlId =
               variables.entity_download ||
-              variables.entity_stat_1 ||
               entity?.entity_id;
 
             const ulId =
@@ -306,6 +321,22 @@ hemma_popup_network:
 
             const pingId = variables.entity_ping;
 
+            const action1Id            = variables.action_1_entity         || null;
+            const action1Label         = variables.action_1_label          || null;
+            const action1Stat          = variables.action_1_status         || null;
+            const action1ConfirmHelper = variables.action_1_confirm_helper
+              || (action1Id ? 'input_boolean.hemma_restart_confirm_1' : null);
+            const action1DoneHelper    = variables.action_1_done_helper
+              || (action1Id ? 'input_boolean.hemma_restart_done_1'    : null);
+            const action2Id            = variables.action_2_entity         || null;
+            const action2Label         = variables.action_2_label          || null;
+            const action2Stat          = variables.action_2_status         || null;
+            const action2ConfirmHelper = variables.action_2_confirm_helper
+              || (action2Id ? 'input_boolean.hemma_restart_confirm_2' : null);
+            const action2DoneHelper    = variables.action_2_done_helper
+              || (action2Id ? 'input_boolean.hemma_restart_done_2'    : null);
+            const hasActions           = !!(action1Id || action2Id);
+
             /* -------------------------------------------------------
              * Values
              * ------------------------------------------------------- */
@@ -314,7 +345,7 @@ hemma_popup_network:
             const ul = safeNum(ulId);
 
             const _ck = 'hemma_network_' + (dlId || 'x');
-            const _ch = [states[dlId]?.state, states[ulId]?.state, states[statusId]?.state, states[wiredDlId]?.state, states[wiredUlId]?.state, states[wifiDlId]?.state, states[wifiUlId]?.state, states[pingId]?.state].join('|');
+            const _ch = [states[dlId]?.state, states[ulId]?.state, states[statusId]?.state, states[wiredDlId]?.state, states[wiredUlId]?.state, states[wifiDlId]?.state, states[wifiUlId]?.state, states[pingId]?.state, states[action1Stat]?.state, states[action2Stat]?.state, states[action1ConfirmHelper]?.state, states[action2ConfirmHelper]?.state, states[action1DoneHelper]?.state, states[action2DoneHelper]?.state, hass?.entities?.[action1Stat]?.name, hass?.entities?.[action2Stat]?.name, hass?.entities?.[action1Id]?.name, hass?.entities?.[action2Id]?.name].join('|');
             window._hc = window._hc || {};
             if (window._hc[_ck]?.h === _ch) return window._hc[_ck].r;
 
@@ -346,14 +377,15 @@ hemma_popup_network:
 
             const roomName = variables.room_name || 'Network';
 
-            const max = Math.max(
-              dlOk ? dl : 0,
-              ulOk ? ul : 0
-            );
-
             const idle = Number(variables.idle_threshold ?? 1);
             const light = Number(variables.light_threshold ?? 10);
             const heavy = Number(variables.heavy_threshold ?? 50);
+
+            const _allVals = [dl, ul,
+              safeNum(wiredDlId), safeNum(wiredUlId),
+              safeNum(wifiDlId),  safeNum(wifiUlId),
+            ].filter(v => v != null);
+            const max = _allVals.length > 0 ? Math.max(..._allVals) : 0;
 
             const tier = max < idle
               ? 'Idle'
@@ -363,9 +395,8 @@ hemma_popup_network:
                   ? 'Active'
                   : 'Heavy';
 
-            const dir = (!dlOk || (ulOk && ul > dl))
-              ? 'Upload'
-              : 'Download';
+            // Direction from WAN speeds (dl/ul) which correctly reflect internet traffic direction.
+            const dir = (!dlOk || (ulOk && ul > dl)) ? 'Upload' : 'Download';
 
             let advice;
 
@@ -406,7 +437,7 @@ hemma_popup_network:
             const fmtPing = (v) => v == null ? '—' : String(Math.round(v));
 
             /* -------------------------------------------------------
-             * Status Badge Card (tappable — more-info for entity_status)
+             * Status Badge Card
              * ------------------------------------------------------- */
 
             const statusBadgeCard = {
@@ -502,18 +533,22 @@ hemma_popup_network:
                 },
               },
               custom_fields: {
-                c: `
-                  <div>
-                    <div style="display:flex;align-items:baseline;gap:4px;padding-right:6px;">
-                      <span style="font-size:26px;font-weight:400;color:#ffffff;line-height:1.15;">${fmt(dl, dlId)}</span>
-                      <span style="font-size:14px;color:rgba(255,255,255,0.7);">Mbit/s</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:7px;">
-                      <span style="width:8px;height:8px;background:var(--hemma-badge-network-low-color, #44e371);border-radius:50%;display:inline-block;flex-shrink:0;"></span>
-                      <span style="font-size:14px;color:rgba(255,255,255,0.75);">Download</span>
-                    </div>
-                  </div>
-                `,
+                c: `[[[
+                  const s = states['${dlId}'];
+                  const v = parseFloat(s?.state);
+                  const prec = hass?.entities?.['${dlId}']?.display_precision ?? s?.attributes?.suggested_display_precision ?? null;
+                  const d = isNaN(v) ? '—' : (prec != null ? v.toFixed(prec) : (v >= 100 ? Math.round(v).toString() : v.toFixed(1)));
+                  return '<div>'
+                    + '<div style="display:flex;align-items:baseline;gap:4px;padding-right:6px;">'
+                    + '<span style="font-size:26px;font-weight:400;color:var(--hemma-popup-tile-text-primary);line-height:1.15;">' + d + '</span>'
+                    + '<span style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);">Mbit/s</span>'
+                    + '</div>'
+                    + '<div style="display:flex;align-items:center;gap:6px;margin-top:7px;">'
+                    + '<span style="width:8px;height:8px;background:var(--hemma-badge-network-low-color, #44e371);border-radius:50%;display:inline-block;flex-shrink:0;"></span>'
+                    + '<span style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);">Download</span>'
+                    + '</div>'
+                    + '</div>';
+                ]]]`,
               },
             };
 
@@ -538,18 +573,22 @@ hemma_popup_network:
                 },
               },
               custom_fields: {
-                c: `
-                  <div>
-                    <div style="display:flex;align-items:baseline;gap:4px;padding-left:6px;">
-                      <span style="font-size:26px;font-weight:400;color:#ffffff;line-height:1.15;">${fmt(ul, ulId)}</span>
-                      <span style="font-size:14px;color:rgba(255,255,255,0.7);">Mbit/s</span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:7px;margin-left:6px;">
-                      <span style="width:8px;height:8px;background:var(--hemma-badge-network-active-color, #ffd600);border-radius:50%;display:inline-block;flex-shrink:0;"></span>
-                      <span style="font-size:14px;color:rgba(255,255,255,0.75);">Upload</span>
-                    </div>
-                  </div>
-                `,
+                c: `[[[
+                  const s = states['${ulId || dlId}'];
+                  const v = parseFloat(s?.state);
+                  const prec = hass?.entities?.['${ulId || dlId}']?.display_precision ?? s?.attributes?.suggested_display_precision ?? null;
+                  const d = isNaN(v) ? '—' : (prec != null ? v.toFixed(prec) : (v >= 100 ? Math.round(v).toString() : v.toFixed(1)));
+                  return '<div>'
+                    + '<div style="display:flex;align-items:baseline;gap:4px;padding-left:6px;">'
+                    + '<span style="font-size:26px;font-weight:400;color:var(--hemma-popup-tile-text-primary);line-height:1.15;">' + d + '</span>'
+                    + '<span style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);">Mbit/s</span>'
+                    + '</div>'
+                    + '<div style="display:flex;align-items:center;gap:6px;margin-top:7px;margin-left:6px;">'
+                    + '<span style="width:8px;height:8px;background:var(--hemma-badge-network-active-color, #ffd600);border-radius:50%;display:inline-block;flex-shrink:0;"></span>'
+                    + '<span style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);">Upload</span>'
+                    + '</div>'
+                    + '</div>';
+                ]]]`,
               },
             };
 
@@ -603,17 +642,32 @@ hemma_popup_network:
                 custom_fields: { c: [{ 'justify-self': 'center' }] },
               },
               custom_fields: {
-                c: '<div style="position:relative;width:120px;height:120px;">'
-                  + `<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">`
-                    + `<circle cx="50" cy="50" r="${pingRadius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>`
-                    + (ping != null ? `<circle cx="50" cy="50" r="${pingRadius}" fill="none" stroke="${pingColor}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${pingCircumference}" stroke-dashoffset="${pingDashOffset}"/>` : '')
-                  + '</svg>'
-                  + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
-                    + '<div style="font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:.08em;font-weight:500;">PING</div>'
-                    + `<div style="color:${pingColor};font-size:28px;font-weight:600;line-height:1;">${fmtPing(ping)}</div>`
-                    + '<div style="color:rgba(255,255,255,0.6);font-size:14px;margin-top:-4px;">ms</div>'
-                  + '</div>'
-                  + '</div>',
+                c: `[[[
+                  const v = ${pingId ? `parseFloat(states['${pingId}']?.state)` : 'NaN'};
+                  const ping = (!isNaN(v) && v > 0) ? v : null;
+                  const pingMax = 200;
+                  const pingRadius = 42;
+                  const pingCircumference = 2 * Math.PI * pingRadius;
+                  const pingProgress = ping != null ? 1 - Math.min(ping / pingMax, 1) : 0;
+                  const pingDashOffset = pingCircumference - pingProgress * pingCircumference;
+                  let pingColor = 'var(--hemma-popup-green-color, #67f5a0)';
+                  if (ping == null)     pingColor = 'rgba(255,255,255,0.15)';
+                  else if (ping >= 150) pingColor = 'var(--hemma-popup-red-color, #ff453a)';
+                  else if (ping >= 60)  pingColor = 'var(--hemma-popup-orange-color, #ff9230)';
+                  else if (ping >= 20)  pingColor = 'var(--hemma-popup-yellow-color, #ffd600)';
+                  const fmtPing = ping != null ? (ping < 1 ? '< 1' : String(Math.round(ping))) : '—';
+                  return '<div style="position:relative;width:120px;height:120px;">'
+                    + '<svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">'
+                    + '<circle cx="50" cy="50" r="' + pingRadius + '" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>'
+                    + (ping != null ? '<circle cx="50" cy="50" r="' + pingRadius + '" fill="none" stroke="' + pingColor + '" stroke-width="7" stroke-linecap="round" stroke-dasharray="' + pingCircumference + '" stroke-dashoffset="' + pingDashOffset + '"/>' : '')
+                    + '</svg>'
+                    + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;">'
+                    + '<div style="font-size:11px;color:var(--hemma-popup-tile-text-muted);letter-spacing:.08em;font-weight:500;">PING</div>'
+                    + '<div style="color:' + pingColor + ';font-size:28px;font-weight:600;line-height:1;">' + fmtPing + '</div>'
+                    + '<div style="color:var(--hemma-popup-tile-text-secondary);font-size:14px;margin-top:-4px;">ms</div>'
+                    + '</div>'
+                    + '</div>';
+                ]]]`,
               },
             };
 
@@ -650,6 +704,14 @@ hemma_popup_network:
             const headerCard = {
               ...baseCard,
               entity: dlId,
+              variables: {
+                dl_id: dlId,
+                ul_id: ulId || null,
+                idle_t: idle,
+                light_t: light,
+                heavy_t: heavy,
+                room: roomName,
+              },
               tap_action: { action: 'none' },
               card_mod: { style: contentCardStyle },
               styles: {
@@ -672,11 +734,28 @@ hemma_popup_network:
                 },
               },
               custom_fields: {
-                title: '<div style="font-family:var(--primary-font-family,system-ui);color:#ffffff;text-align:left;">'
-                  + `<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">${roomName}</div>`
-                  + '<div style="font-size:14px;color:rgba(255,255,255,0.6);font-weight:400;margin-top:2px;">Internet · Network</div>'
-                  + `<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;margin-bottom:16px;">${advice}</div>`
-                  + '</div>',
+                title: `[[[
+                  const safeN = (id) => { if (!id) return null; const n = parseFloat(states[id]?.state); return isNaN(n) ? null : n; };
+                  const dl = safeN(variables.dl_id);
+                  const ul = safeN(variables.ul_id);
+                  const dlOk = dl != null, ulOk = ul != null;
+                  const allVals = [dl, ul].filter(v => v != null);
+                  const max = allVals.length ? Math.max(...allVals) : 0;
+                  const idleT = variables.idle_t ?? 1;
+                  const lightT = variables.light_t ?? 10;
+                  const heavyT = variables.heavy_t ?? 50;
+                  const tier = max < idleT ? 'Idle' : max < lightT ? 'Light' : max < heavyT ? 'Active' : 'Heavy';
+                  const dir = (!dlOk || (ulOk && ul > dl)) ? 'Upload' : 'Download';
+                  let advice;
+                  if (dlOk || ulOk) { advice = max < idleT ? 'Connection idle' : tier + ' ' + dir; }
+                  else { advice = 'No status data'; }
+                  const room = variables.room || 'Network';
+                  return '<div style="font-family:var(--primary-font-family,system-ui);color:var(--hemma-popup-tile-text-primary);text-align:left;">'
+                    + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">' + room + '</div>'
+                    + '<div style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);font-weight:400;margin-top:2px;">Internet \xb7 Network</div>'
+                    + '<div style="font-size:22px;font-weight:400;letter-spacing:-.5px;margin-top:20px;margin-bottom:16px;">' + advice + '</div>'
+                    + '</div>';
+                ]]]`,
                 right: { card: rightColCard },
                 stats: { card: statsWrapperCard },
               },
@@ -691,12 +770,6 @@ hemma_popup_network:
                 entity: dlId,
                 name: 'Download',
                 color: 'var(--hemma-badge-network-low-color, #44e371)',
-                color_thresholds: [
-                  { value: 0,  color: 'var(--hemma-badge-network-idle-color, #8e8e93)' },
-                  { value: 1,  color: 'var(--hemma-badge-network-low-color, #44e371)' },
-                  { value: 10, color: 'var(--hemma-badge-network-active-color, #ffd600)' },
-                  { value: 50, color: 'var(--hemma-badge-network-high-color, #ff9230)' },
-                ],
               },
             ];
 
@@ -705,12 +778,6 @@ hemma_popup_network:
                 entity: ulId,
                 name: 'Upload',
                 color: 'var(--hemma-badge-network-active-color, #ffd600)',
-                color_thresholds: [
-                  { value: 0,  color: 'var(--hemma-badge-network-idle-color, #8e8e93)' },
-                  { value: 1,  color: 'var(--hemma-badge-network-low-color, #44e371)' },
-                  { value: 10, color: 'var(--hemma-badge-network-active-color, #ffd600)' },
-                  { value: 50, color: 'var(--hemma-badge-network-high-color, #ff9230)' },
-                ],
                 y_axis: 'secondary',
               });
             }
@@ -759,7 +826,7 @@ hemma_popup_network:
               }
 
               if (val < 1) {
-                return { label: 'Idle', color: 'var(--hemma-badge-network-idle-color, #8e8e93)', pct };
+                return { label: 'Idle', color: 'var(--hemma-badge-network-idle-color, rgba(255,255,255,0.90))', pct };
               }
               if (val < 10) {
                 return { label: 'Light', color: 'var(--hemma-badge-network-low-color, #44e371)', pct };
@@ -771,238 +838,12 @@ hemma_popup_network:
             };
 
             const makeTileCard = (entityId, maxScale) => {
-
-              const val = safeNum(entityId);
-
-              const st = tileThresh(val, maxScale);
-
-              const label =
-                friendlyName(entityId, 'Sensor');
-
-              const icon =
-                (
-                  entityId &&
-                  (
-                    states[entityId]?.attributes?.icon ||
-                    hass?.entities?.[entityId]?.icon
-                  )
-                ) || null;
-
-              const gradient =
-                val == null
-                  ? 'rgba(255,255,255,0.12)'
-
-                  : val < 1
-                    ? `
-                      linear-gradient(
-                        90deg,
-                        #8e8e93 0%,
-                        #b0b0b5 100%
-                      )
-                    `
-
-                    : val < 10
-                      ? `
-                        linear-gradient(
-                          90deg,
-                          #57FFFC 0%,
-                          #54F2A0 35%,
-                          #65F785 70%,
-                          #4CFA57 100%
-                        )
-                      `
-
-                      : val < 50
-                        ? `
-                          linear-gradient(
-                            90deg,
-                            #FFD166 0%,
-                            #FFB347 100%
-                          )
-                        `
-
-                        : `
-                          linear-gradient(
-                            90deg,
-                            #FF7A59 0%,
-                            #FF4D6D 100%
-                          )
-                        `;
-
-              const progressBar = `
-                <div style="
-                  position:relative;
-
-                  height:8px;
-                  width:100%;
-
-                  background:rgba(255,255,255,0.055);
-
-                  border-radius:999px;
-
-                  overflow:hidden;
-
-                  margin-top:10px;
-                ">
-
-                  ${
-                    val != null
-                      ? `
-                        <div style="
-                          position:absolute;
-                          inset:0 auto 0 0;
-
-                          width:${st.pct.toFixed(1)}%;
-
-                          border-radius:999px;
-
-                          background:${gradient};
-
-                          transition:
-                            width .35s ease;
-                        "></div>
-                      `
-                      : ''
-                  }
-
-                </div>
-              `;
-
-              const content = `
-                <div style="
-                  margin-top:1px;
-
-                  min-width:0;
-                  overflow:hidden;
-                ">
-
-                  <div style="
-                    display:flex;
-                    justify-content:space-between;
-                    align-items:center;
-
-                    margin-bottom:8px;
-
-                    gap:8px;
-                  ">
-
-                    <div style="
-                      display:flex;
-                      align-items:center;
-                      gap:6px;
-
-                      min-width:0;
-                    ">
-
-                      ${icon ? `
-                        <ha-icon
-                          icon="${icon}"
-                          style="
-                            --mdc-icon-size:13px;
-
-                            width:13px;
-                            height:13px;
-
-                            display:inline-flex;
-                            align-items:center;
-                            justify-content:center;
-
-                            flex-shrink:0;
-
-                            color:rgba(255,255,255,0.52);
-                          "
-                        ></ha-icon>
-                      ` : ''}
-
-                      <span style="
-                        font-size:13px;
-                        color:rgba(255,255,255,0.88);
-
-                        font-weight:600;
-
-                        white-space:nowrap;
-                        overflow:hidden;
-                        text-overflow:ellipsis;
-
-                        letter-spacing:.01em;
-                      ">
-                        ${label}
-                      </span>
-
-                    </div>
-
-                    <span style="
-                      font-size:13px;
-
-                      color:${
-                        val != null
-                          ? st.color
-                          : 'rgba(255,255,255,0.35)'
-                      };
-
-                      white-space:nowrap;
-
-                      font-weight:600;
-
-                      letter-spacing:.01em;
-
-                      flex-shrink:0;
-                    ">
-                      ${st.label}
-                    </span>
-
-                  </div>
-
-                  <div style="
-                    display:flex;
-                    align-items:baseline;
-
-                    gap:3px;
-                  ">
-
-                    <span style="
-                      font-size:20px;
-                      font-weight:400;
-
-                      color:${
-                        val != null
-                          ? '#ffffff'
-                          : 'rgba(255,255,255,0.35)'
-                      };
-
-                      line-height:1;
-
-                      white-space:nowrap;
-                    ">
-                      ${fmt(val, entityId)}
-                    </span>
-
-                    ${
-                      val != null
-                        ? `
-                          <span style="
-                            font-size:12px;
-                            color:rgba(255,255,255,0.55);
-
-                            white-space:nowrap;
-                          ">
-                            Mbit/s
-                          </span>
-                        `
-                        : ''
-                    }
-
-                  </div>
-
-                  ${progressBar}
-
-                </div>
-              `;
-
               return {
                 ...baseCard,
 
                 entity: entityId || dlId,
+
+                variables: { max_scale: maxScale },
 
                 tap_action:
                   entityId
@@ -1018,49 +859,74 @@ hemma_popup_network:
 
                 styles: {
                   card: [
-                    {
-                      background:'rgba(255,255,255,0.045)',
-                    },
-                    {
-                      border:'none',
-                    },
-                    {
-                      borderRadius:'24px',
-                    },
-                    {
-                      boxShadow:'none',
-                    },
-                    {
-                      backdropFilter:'none',
-                    },
-                    {
-                      WebkitBackdropFilter:'none',
-                    },
-                    {
-                      padding:'18px 18px 16px 18px',
-                    },
+                    { background:'rgba(255,255,255,0.045)' },
+                    { border:'none' },
+                    { borderRadius:'24px' },
+                    { boxShadow:'none' },
+                    { backdropFilter:'none' },
+                    { WebkitBackdropFilter:'none' },
+                    { padding:'18px 18px 16px 18px' },
                   ],
-
                   grid: [
-                    {
-                      'grid-template-areas':'"c"',
-                    },
-                    {
-                      'grid-template-columns':'1fr',
-                    },
+                    { 'grid-template-areas':'"c"' },
+                    { 'grid-template-columns':'1fr' },
                   ],
-
                   custom_fields: {
-                    c: [
-                      {
-                        'justify-self':'stretch',
-                      },
-                    ],
+                    c: [{ 'justify-self':'stretch' }],
                   },
                 },
 
                 custom_fields: {
-                  c: content,
+                  c: `[[[
+                    const s = ${entityId ? `states['${entityId}']` : 'null'};
+                    const v = parseFloat(s?.state);
+                    const val = isNaN(v) ? null : v;
+                    const maxScale = ${maxScale};
+
+                    let pct = 0, label = '—', color = 'var(--hemma-popup-tile-text-muted, var(--disabled-text-color, rgba(255,255,255,0.4)))';
+                    if (val != null) {
+                      if (val < 1)       { pct = val * 15;                                                      label = 'Idle';   color = 'var(--hemma-badge-network-idle-color, rgba(255,255,255,0.90))'; }
+                      else if (val < 10) { pct = 15 + ((val - 1) / 9) * 25;                                    label = 'Light';  color = 'var(--hemma-badge-network-low-color, #44e371)'; }
+                      else if (val < 50) { pct = 40 + ((val - 10) / 40) * 30;                                  label = 'Active'; color = 'var(--hemma-badge-network-active-color, #ffd600)'; }
+                      else               { pct = Math.min(100, 70 + ((val - 50) / Math.max(1, maxScale - 50)) * 30); label = 'High'; color = 'var(--hemma-badge-network-high-color, #ff9230)'; }
+                    }
+
+                    let gradient;
+                    if (val == null)    gradient = 'rgba(255,255,255,0.12)';
+                    else if (val < 1)   gradient = 'linear-gradient(90deg,#8e8e93 0%,#b0b0b5 100%)';
+                    else if (val < 10)  gradient = 'linear-gradient(90deg,#57FFFC 0%,#54F2A0 35%,#65F785 70%,#4CFA57 100%)';
+                    else if (val < 50)  gradient = 'linear-gradient(90deg,#FFD166 0%,#FFB347 100%)';
+                    else                gradient = 'linear-gradient(90deg,#FF7A59 0%,#FF4D6D 100%)';
+
+                    const prec = hass?.entities?.['${entityId}']?.display_precision ?? s?.attributes?.suggested_display_precision ?? null;
+                    const display = val == null ? '—' : (prec != null ? val.toFixed(prec) : (val >= 100 ? Math.round(val).toString() : val.toFixed(1)));
+
+                    const rawName = s?.attributes?.friendly_name;
+                    const slug = '${(entityId || '').split('.')[1] || entityId || ''}';
+                    const nameLabel = rawName || slug.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
+
+                    const iconAttr = s?.attributes?.icon || hass?.entities?.['${entityId}']?.icon || null;
+                    const iconHtml = iconAttr
+                      ? '<ha-icon icon="' + iconAttr + '" style="--mdc-icon-size:13px;width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--hemma-popup-tile-text-muted);"></ha-icon>'
+                      : '';
+
+                    return '<div style="margin-top:1px;min-width:0;overflow:hidden;">'
+                      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">'
+                      + '<div style="display:flex;align-items:center;gap:6px;min-width:0;">'
+                      + iconHtml
+                      + '<span style="font-size:13px;color:var(--hemma-popup-tile-text-primary, var(--primary-text-color));font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em;">' + nameLabel + '</span>'
+                      + '</div>'
+                      + '<span style="font-size:13px;color:' + (val != null ? color : 'var(--hemma-popup-tile-text-muted, var(--disabled-text-color, rgba(255,255,255,0.35)))') + ';white-space:nowrap;font-weight:600;letter-spacing:.01em;flex-shrink:0;">' + label + '</span>'
+                      + '</div>'
+                      + '<div style="display:flex;align-items:baseline;gap:3px;">'
+                      + '<span style="font-size:20px;font-weight:400;color:' + (val != null ? 'var(--hemma-popup-tile-text-primary, var(--primary-text-color, #fff))' : 'var(--hemma-popup-tile-text-muted, var(--disabled-text-color, rgba(255,255,255,0.35)))') + ';line-height:1;white-space:nowrap;">' + display + '</span>'
+                      + (val != null ? '<span style="font-size:12px;color:var(--hemma-popup-tile-text-muted, var(--secondary-text-color));white-space:nowrap;">Mbit/s</span>' : '')
+                      + '</div>'
+                      + '<div style="position:relative;height:8px;width:100%;background:var(--hemma-popup-progress-track, rgba(255,255,255,0.09));border-radius:999px;overflow:hidden;margin-top:10px;">'
+                      + (val != null ? '<div style="position:absolute;inset:0 auto 0 0;width:' + pct.toFixed(1) + '%;border-radius:999px;background:' + gradient + ';transition:width .35s ease;"></div>' : '')
+                      + '</div>'
+                      + '</div>';
+                  ]]]`,
                 },
               };
             };
@@ -1075,7 +941,7 @@ hemma_popup_network:
                   { background: 'transparent' },
                   { border: 'none' },
                   { 'box-shadow': 'none' },
-                  { padding: '4px 28px 20px 28px' },
+                  { padding: hasActions ? '4px 28px 8px 28px' : '4px 28px 20px 28px' },
                 ],
                 grid: [
                   { 'grid-template-areas': '"wired_dl wifi_dl" "wired_ul wifi_ul"' },
@@ -1123,10 +989,240 @@ hemma_popup_network:
             };
 
             /* -------------------------------------------------------
+             * Action Buttons
+             * ------------------------------------------------------- */
+
+            const makeActionButton = (entityId, label, statusId, confirmHelper, doneHelper) => {
+              const s = entityId ? states[entityId] : null;
+              const nameLabel = label
+                || (statusId && (hass?.entities?.[statusId]?.name || states[statusId]?.attributes?.friendly_name))
+                || hass?.entities?.[entityId]?.name
+                || s?.attributes?.friendly_name
+                || (entityId ? entityId.split('.')[1].replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—');
+              const iconAttr = ((statusId && (hass?.entities?.[statusId]?.icon || states[statusId]?.attributes?.icon))
+                || (entityId && (hass?.entities?.[entityId]?.icon || s?.attributes?.icon))
+                || 'mdi:restart').replace(/'/g, "\\'");
+
+              const _esc = nameLabel.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+              const _ch  = confirmHelper || '';
+              const _dh  = doneHelper    || '';
+              const _sid = statusId || '';
+
+              const cancelPillStyle = [
+                ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                'ha-card { min-height: 0 !important; background: rgba(255,255,255,0.08) !important; border: none !important; border-radius: 999px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; transition: background 0.15s ease !important; }',
+                'ha-card:hover { background: rgba(255,255,255,0.14) !important; }',
+                'ha-ripple { display: none !important; }',
+              ].join('\n');
+
+              const actionPillModStyle = [
+                ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                'ha-card { min-height: 0 !important; border-radius: 999px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; cursor: pointer !important; }',
+                '@keyframes hemma-confirm-pop { from { opacity: 0.2; transform: scale(0.86); } to { opacity: 1; transform: scale(1); } }',
+                'ha-ripple { display: none !important; }',
+              ].join('\n');
+
+              /* ---- Tap actions ---- */
+              const cancelTap = _ch
+                ? { action: 'call-service', service: 'input_boolean.turn_off', service_data: { entity_id: _ch } }
+                : { action: 'none' };
+
+              /* ---- Cancel ---- */
+              const cancelPillCard = {
+                type: 'custom:button-card', name: 'Cancel', tap_action: cancelTap,
+                show_icon: false, show_name: true, show_label: false, show_state: false,
+                card_mod: { style: cancelPillStyle },
+                styles: {
+                  card: [{ padding: '10px 14px' }],
+                  name: [{ 'font-size': '13px' }, { 'font-weight': '600' }, { color: 'rgba(255,255,255,0.6)' }, { 'white-space': 'nowrap' }, { 'line-height': '20px' }, { 'font-family': 'var(--primary-font-family,system-ui)' }],
+                },
+              };
+
+              /* ---- Smart action ---- */
+              // Name
+              const actionName = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                if (dh && states[dh]?.state === 'on') return '';
+                if (ch && states[ch]?.state === 'on') return 'Confirm';
+                return 'Restart';
+              ]]]` : 'Restart';
+
+              const actionShowName = _dh ? `[[[return states['${_dh}']?.state !== 'on']]]` : true;
+              const actionShowIcon = _dh ? `[[[return states['${_dh}']?.state === 'on']]]` : false;
+              const actionIcon     = _dh ? `[[[return states['${_dh}']?.state === 'on' ? 'mdi:check-bold' : null]]]` : null;
+
+              // Background
+              const actionBg = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                if (dh && states[dh]?.state === 'on') return 'color-mix(in srgb,#44e371 24%,transparent)';
+                if (ch && states[ch]?.state === 'on') return 'color-mix(in srgb,#ff453a 26%,transparent)';
+                return 'rgba(255,255,255,0.13)';
+              ]]]` : 'rgba(255,255,255,0.13)';
+
+              const actionBorder = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                if (dh && states[dh]?.state === 'on') return '1px solid color-mix(in srgb,#44e371 55%,transparent)';
+                if (ch && states[ch]?.state === 'on') return '1px solid color-mix(in srgb,#ff453a 55%,transparent)';
+                return '1px solid transparent';
+              ]]]` : '1px solid transparent';
+
+              // ha-card animation
+              const actionAnim = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                return (states[ch]?.state === 'on' || states[dh]?.state === 'on') ? 'hemma-confirm-pop' : 'none';
+              ]]]` : 'none';
+
+              // Container div animation
+              const actionContainerAnim = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                return (states[ch]?.state === 'on' || states[dh]?.state === 'on') ? 'none' : 'hemma-action-swap';
+              ]]]` : 'none';
+
+              const actionColor = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                if (dh && states[dh]?.state === 'on') return 'var(--hemma-badge-network-online-color,#44e371)';
+                if (ch && states[ch]?.state === 'on') return 'var(--hemma-popup-red-color,#ff453a)';
+                return 'var(--hemma-popup-tile-text-primary)';
+              ]]]` : 'var(--hemma-popup-tile-text-primary)';
+
+              const actionFontWeight = (_ch || _dh) ? `[[[
+                const ch = '${_ch}', dh = '${_dh}';
+                return (ch && states[ch]?.state === 'on') || (dh && states[dh]?.state === 'on') ? '700' : '600';
+              ]]]` : '600';
+
+              const actionPillCard = {
+                type: 'custom:button-card', entity: entityId || dlId,
+                name: actionName,
+                tap_action: entityId && _ch
+                  ? { action: 'call-service', service: 'script.turn_on', service_data: { entity_id: 'script.hemma_restart_toggle', variables: { button_entity: entityId, helper_entity: _ch, done_entity: _dh } } }
+                  : (entityId ? { action: 'call-service', service: 'button.press', service_data: { entity_id: entityId } } : { action: 'none' }),
+                show_icon: actionShowIcon, show_name: actionShowName, show_label: false, show_state: false,
+                icon: actionIcon,
+                card_mod: { style: actionPillModStyle },
+                styles: {
+                  card: [
+                    { padding: '10px 18px' },
+                    { transition: 'background 0.35s ease, border-color 0.35s ease' },
+                    { background: actionBg },
+                    { border: actionBorder },
+                    { 'animation-name': actionAnim },
+                    { 'animation-duration': '0.26s' },
+                    { 'animation-timing-function': 'cubic-bezier(0.34,1.26,0.64,1)' },
+                    { 'animation-fill-mode': 'forwards' },
+                  ],
+                  name: [
+                    { 'font-size': '13px' }, { 'white-space': 'nowrap' }, { 'letter-spacing': '.01em' }, { 'font-family': 'var(--primary-font-family,system-ui)' },
+                    { 'line-height': '20px' },
+                    { transition: 'color 0.35s ease' },
+                    { 'font-weight': actionFontWeight },
+                    { color: actionColor },
+                  ],
+                  icon: [
+                    { color: 'var(--hemma-badge-network-online-color,#44e371)' },
+                    { width: '20px' }, { height: '20px' },
+                  ],
+                },
+              };
+
+              /* ---- Display ---- */
+              const infoOpacity = (_ch || _dh)
+                ? `[[[return (states['${_ch}']?.state === 'on' || states['${_dh}']?.state === 'on') ? '0' : '1']]]`
+                : '1';
+              const infoPE = (_ch || _dh)
+                ? `[[[return (states['${_ch}']?.state === 'on' || states['${_dh}']?.state === 'on') ? 'none' : 'auto']]]`
+                : 'auto';
+              // Cancel: display:none/flex + animation-fill-mode:both — from{opacity:0} applied in same tick as display:flex
+              const caVisible = _ch
+                ? `states['${_ch}']?.state === 'on' && states['${_dh}']?.state !== 'on'`
+                : 'false';
+              const caDisplay      = _ch ? `[[[return ${caVisible} ? 'flex' : 'none']]]` : 'none';
+              const caContainerAnim = _ch ? `[[[return ${caVisible} ? 'hemma-ca-in' : 'none']]]` : 'none';
+
+              /* ---- Info field ---- */
+              const infoField = _sid ? `[[[
+                const sid = '${_sid}', name = '${_esc}';
+                const ss = states[sid];
+                const unav = !ss || ss.state === 'unavailable' || ss.state === 'unknown';
+                let stc = 'rgba(255,255,255,0.4)', stt = unav ? 'Unknown' : null;
+                if (!unav) { if (ss.state === 'on') { stt = 'Connected'; stc = 'var(--hemma-badge-network-online-color,#44e371)'; } else { stt = 'Offline'; stc = 'var(--hemma-badge-network-offline-color,#ff453a)'; } }
+                const sr = stt ? '<div style="margin-top:0;"><span style="font-size:12px;color:' + stc + ';font-weight:500;letter-spacing:.01em;">' + stt + '</span></div>' : '';
+                return '<div style="display:flex;flex-direction:column;align-items:flex-start;">'
+                  + '<span style="font-size:13px;font-weight:600;color:var(--hemma-popup-tile-text-primary);letter-spacing:.01em;white-space:nowrap;">' + name + '</span>'
+                  + sr + '</div>';
+              ]]]` : '<div style="display:flex;flex-direction:column;align-items:flex-start;"><span style="font-size:13px;font-weight:600;color:var(--hemma-popup-tile-text-primary);letter-spacing:.01em;white-space:nowrap;">' + nameLabel + '</span></div>';
+
+              /* ---- Outer tile ---- */
+              const outerTap = _ch ? {
+                action: `[[[return states['${_ch}']?.state === 'on' ? 'call-service' : '${_sid || entityId ? 'more-info' : 'none'}']]]`,
+                service: 'input_boolean.turn_off',
+                service_data: { entity_id: _ch },
+                entity: statusId || entityId,
+              } : (statusId ? { action: 'more-info', entity: statusId } : (entityId ? { action: 'more-info' } : { action: 'none' }));
+
+              return {
+                ...baseCard,
+                entity: entityId || dlId,
+                tap_action: outerTap,
+                card_mod: { style: tileTapStyle },
+                styles: {
+                  card: [{ padding: '18px 18px 16px 18px' }],
+                  grid: [{ display: 'flex' }, { 'flex-direction': 'row' }, { 'align-items': 'center' }, { gap: '10px' }],
+                  custom_fields: {
+                    icon:   [{ flex: '0 0 auto' }],
+                    info:   [{ flex: '1 1 auto' }, { 'min-width': '0' }, { 'text-align': 'left' }, { transition: 'opacity 0.3s ease' }, { opacity: infoOpacity }, { 'pointer-events': infoPE }],
+                    ca:     [{ 'flex-shrink': '0' }, { overflow: 'hidden' }, { display: caDisplay }, { 'animation-name': caContainerAnim }, { 'animation-duration': '0.3s' }, { 'animation-timing-function': 'ease' }, { 'animation-fill-mode': 'both' }],
+                    action: [{ 'flex-shrink': '0' }, { 'animation-name': actionContainerAnim }, { 'animation-duration': '0.3s' }, { 'animation-timing-function': 'ease' }, { 'animation-fill-mode': 'both' }],
+                  },
+                },
+                custom_fields: {
+                  icon:   '<ha-icon icon="' + iconAttr + '" style="--mdc-icon-size:22px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--hemma-popup-tile-text-muted);"></ha-icon>',
+                  info:   infoField,
+                  ca:     { card: cancelPillCard },
+                  action: entityId ? { card: actionPillCard } : '<div></div>',
+                },
+              };
+            };
+
+            const actionCount = (action1Id ? 1 : 0) + (action2Id ? 1 : 0);
+            const actionAreas = actionCount === 1 ? (action1Id ? '"a1"' : '"a2"') : '"a1 a2"';
+            const actionCols  = actionCount === 1 ? '1fr' : '1fr 1fr';
+
+            const actionsCard = hasActions ? {
+              ...baseCard,
+              entity: dlId,
+              tap_action: { action: 'none' },
+              card_mod: { style: contentCardStyle + '\n@media (max-width:600px){#container{grid-template-columns:1fr !important;grid-template-areas:"a1" "a2" !important;}}' },
+              styles: {
+                card: [
+                  { background: 'transparent' },
+                  { border: 'none' },
+                  { 'box-shadow': 'none' },
+                  { padding: '0 28px 20px 28px' },
+                ],
+                grid: [
+                  { 'grid-template-areas': actionAreas },
+                  { 'grid-template-columns': actionCols },
+                  { gap: '8px' },
+                  { 'align-items': 'start' },
+                ],
+                custom_fields: {
+                  a1: [{ 'grid-area': 'a1' }, { 'justify-self': 'stretch' }],
+                  a2: [{ 'grid-area': 'a2' }, { 'justify-self': 'stretch' }],
+                },
+              },
+              custom_fields: {
+                a1: action1Id ? { card: makeActionButton(action1Id, action1Label, action1Stat, action1ConfirmHelper, action1DoneHelper) } : '<div></div>',
+                a2: action2Id ? { card: makeActionButton(action2Id, action2Label, action2Stat, action2ConfirmHelper, action2DoneHelper) } : '<div></div>',
+              },
+            } : null;
+
+            /* -------------------------------------------------------
              * Final Stack
              * ------------------------------------------------------- */
 
-            const _r = { type: 'vertical-stack', cards: [headerCard, graphCard, tilesCard] };
+            const _cards = [headerCard, graphCard, tilesCard];
+            if (hasActions) _cards.push(actionsCard);
+            const _r = { type: 'vertical-stack', cards: _cards };
             window._hc[_ck] = { h: _ch, r: _r };
             return _r;
           ]]]

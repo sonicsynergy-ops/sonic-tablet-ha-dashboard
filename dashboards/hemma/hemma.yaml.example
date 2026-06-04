@@ -17,6 +17,7 @@ button_card_templates: !include_dir_merge_named /config/dashboards/templates/but
 #   hide_sidebar: false
 #   hide_dialog_light_settings_actions: true
 #   hide_dialog_logbook: true
+#   hide_dialog_attributes: false
 #   mobile_settings:
 #     hide_header: true
 #     hide_sidebar: false
@@ -29,7 +30,7 @@ button_card_templates: !include_dir_merge_named /config/dashboards/templates/but
 #       hide_dialog_light_settings_actions: true
 #       hide_dialog_header_breadcrumb_navigation: true
 #       hide_dialog_header_history: true
-#       hide_dialog_attributes: true
+#       hide_dialog_attributes: false
 
 views:
   # ------------------------------------------------------
@@ -49,9 +50,17 @@ views:
         name: Home
         variables:
           # Image Configuration
+          # Demo images are included in www/hemma/rooms/ — replace with your own photos when ready.
           # Place your images at: /config/www/hemma/rooms/home.jpg (light mode)
           #                       /config/www/hemma/rooms/home-night.jpg (dark mode)
-          image: home
+          image: home-demo
+          # Define all room images here once and reuse them across rooms via the YAML anchor.
+          # This preloads backgrounds so room transitions are instant.
+          preload_rooms: &room_images
+            - home-demo
+            - livingroom-demo
+            - kitchen-demo
+            - bedroom-demo
           image_position: center center
           # mobile_background: true # Enable this if you add mobile backgrounds to /local/hemma/mobile/
 
@@ -113,6 +122,8 @@ views:
           media_player_3: media_player.YOUR_ENTITY        # e.g., media_player.bedroom_apple_tv
           show_media_player_4: true
           media_player_4: media_player.YOUR_ENTITY        # e.g., media_player.kitchen
+          # show_media_player_5: true
+          # media_player_5: media_player.YOUR_ENTITY      # optional fifth player
 
       # MOBILE NAVBAR
       - !include /config/dashboards/templates/includes/hemma_navbar_mobile.yaml
@@ -129,6 +140,7 @@ views:
             entity: climate.YOUR_HOME_THERMOSTAT          # e.g., climate.home
             name: Thermostat
             variables:
+              position: 1
               temp_sensor: sensor.YOUR_HOME_TEMPERATURE
 
           # Front Door Lock
@@ -137,6 +149,7 @@ views:
             entity: lock.YOUR_FRONT_DOOR                  # e.g., lock.front_door
             name: Front Door
             variables:
+              position: 2
               icon: door
               show_toggle: true
               battery_entity: sensor.YOUR_LOCK_BATTERY    # optional
@@ -147,6 +160,7 @@ views:
             entity: camera.YOUR_DOORBELL                  # e.g., camera.front_door
             name: Doorbell
             variables:
+              position: 3
               icon: doorbell
               battery_entity: sensor.YOUR_DOORBELL_BATTERY  # optional
 
@@ -156,6 +170,7 @@ views:
             name: Battery Status
             entity: sensor.YOUR_PRIMARY_BATTERY           # any battery entity to display on the card
             variables:
+              position: 4
               entity_filter:
                 - sensor.YOUR_LOCK_BATTERY
                 - sensor.YOUR_DOORBELL_BATTERY
@@ -168,10 +183,11 @@ views:
             template: hemma_network
             name: Network
             variables:
+              position: 5
               room_name: Home
               entity_upload: sensor.YOUR_WAN_UPLOAD_SPEED
               entity_status: binary_sensor.YOUR_INTERNET_STATUS  # e.g., binary_sensor.router_internet
-              entity_ping: sensor.YOUR_PING                      # e.g., sensor.ping_cloudflare
+              entity_ping: sensor.YOUR_PING                      # e.g., sensor.ping_cloudflare_rtt
               entity_stat_1: sensor.YOUR_WIRED_DOWNLOAD_SPEED    # optional sub-stats
               entity_stat_2: sensor.YOUR_WIRED_UPLOAD_SPEED
               entity_stat_3: sensor.YOUR_WIFI_DOWNLOAD_SPEED
@@ -183,6 +199,7 @@ views:
             template: hemma_energy
             name: Energy Usage
             variables:
+              position: 6
               room_name: Home
               entity_power: sensor.YOUR_HOME_POWER
               entity_usage_today: sensor.YOUR_ENERGY_TODAY          # optional kWh today
@@ -195,12 +212,25 @@ views:
             template: hemma_updates
             entity: sensor.YOUR_UPDATES                   # e.g., sensor.pending_updates
             name: Available Updates
+            variables:
+              position: 7
+
+          # Plex Recently Added (optional)
+          # Requires the plex_recently_added HACS integration and hemma_helpers.yaml sensor.
+          # Shows count of items added in last 7 days; goes active when count > 0.
+          # - type: custom:button-card
+          #   template: hemma_plex_recently_added
+          #   entity: sensor.plex_recently_added_count
+          #   name: Plex
+          #   variables:
+          #     position: 8
 
           # Motion Overview Card (optional)
           # Shows active room name when motion is detected, "Clear" when none.
           # - type: custom:button-card
           #   template: hemma_motion
           #   variables:
+          #     position: 9
           #     default_name: Home
           #     sensor_1: binary_sensor.YOUR_LIVING_ROOM_MOTION
           #     label_1: Living Room
@@ -222,7 +252,8 @@ views:
         template: hemma_room
         name: Living Room
         variables:
-          image: livingroom
+          image: livingroom-demo
+          preload_rooms: *room_images
           image_position: center center
           # mobile_background: true
 
@@ -274,6 +305,7 @@ views:
             entity: climate.YOUR_LIVING_ROOM_CLIMATE
             name: Thermostat
             variables:
+              position: 1
               temp_sensor: sensor.YOUR_LIVING_ROOM_TEMP
 
           - type: custom:button-card
@@ -281,6 +313,7 @@ views:
             entity: light.YOUR_LIVING_ROOM_LIGHTS
             name: Lights
             variables:
+              position: 2
               icon: light
               show_toggle: true
 
@@ -289,6 +322,7 @@ views:
             entity: media_player.YOUR_LIVING_ROOM_APPLE_TV
             name: Apple TV
             variables:
+              position: 3
               icon: apple_tv
               show_progress: true
               progress_entity: media_player.YOUR_LIVING_ROOM_APPLE_TV
@@ -298,6 +332,7 @@ views:
             entity: media_player.YOUR_LIVING_ROOM_TV
             name: TV
             variables:
+              position: 4
               icon: tv
               show_toggle: true
 
@@ -306,6 +341,7 @@ views:
             entity: media_player.YOUR_LIVING_ROOM_SPEAKER
             name: Sonos
             variables:
+              position: 5
               icon: speaker
 
           # Active Energy (room-level power monitoring)
@@ -314,6 +350,7 @@ views:
             template: hemma_energy
             name: Active Energy
             variables:
+              position: 6
               room_name: Living Room
               entity_power: sensor.YOUR_LIVING_ROOM_POWER
               entity_usage_today: sensor.YOUR_LIVING_ROOM_ENERGY_TODAY    # optional
@@ -326,6 +363,7 @@ views:
             entity: cover.YOUR_LIVING_ROOM_CURTAIN
             name: Curtain
             variables:
+              position: 7
               icon: curtain
               show_toggle: true
 
@@ -334,6 +372,7 @@ views:
             entity: fan.YOUR_LIVING_ROOM_FAN
             name: Fan
             variables:
+              position: 8
               icon: fan
               show_toggle: true
 
@@ -343,6 +382,7 @@ views:
             entity: plant.YOUR_PLANT                      # e.g., plant.rubber_tree
             name: Rubber Tree
             variables:
+              position: 9
               sensors:
                 - sensor.YOUR_PLANT_MOISTURE
                 - sensor.YOUR_PLANT_ILLUMINANCE
@@ -363,7 +403,8 @@ views:
         template: hemma_room
         name: Kitchen
         variables:
-          image: kitchen
+          image: kitchen-demo
+          preload_rooms: *room_images
           image_position: center center
           # mobile_background: true
 
@@ -413,6 +454,7 @@ views:
             entity: vacuum.YOUR_VACUUM
             name: Robot Vacuum
             variables:
+              position: 1
               icon: vacuum
 
           - type: custom:button-card
@@ -420,6 +462,7 @@ views:
             entity: light.YOUR_KITCHEN_LIGHTS
             name: Lights
             variables:
+              position: 2
               icon: light
               show_toggle: true
 
@@ -428,6 +471,7 @@ views:
             entity: media_player.YOUR_KITCHEN_SPEAKER
             name: Speaker
             variables:
+              position: 3
               icon: speaker
               show_progress: true
 
@@ -436,6 +480,7 @@ views:
             entity: media_player.YOUR_KITCHEN_HOMEPOD     # optional second speaker
             name: HomePod
             variables:
+              position: 4
               icon: homepod
               show_progress: true
 
@@ -452,7 +497,8 @@ views:
         template: hemma_room
         name: Bedroom
         variables:
-          image: bedroom
+          image: bedroom-demo
+          preload_rooms: *room_images
           image_position: center center
           # mobile_background: true
 
@@ -502,6 +548,7 @@ views:
             entity: climate.YOUR_BEDROOM_CLIMATE
             name: Thermostat
             variables:
+              position: 1
               temp_sensor: sensor.YOUR_BEDROOM_TEMP
 
           - type: custom:button-card
@@ -509,6 +556,7 @@ views:
             entity: light.YOUR_BEDROOM_LIGHTS
             name: Lights
             variables:
+              position: 2
               icon: light
               show_toggle: true
 
@@ -517,6 +565,7 @@ views:
             entity: media_player.YOUR_BEDROOM_APPLE_TV
             name: Apple TV
             variables:
+              position: 3
               icon: apple_tv
               show_progress: true
               progress_entity: media_player.YOUR_BEDROOM_APPLE_TV
@@ -526,6 +575,7 @@ views:
             entity: media_player.YOUR_BEDROOM_TV
             name: TV
             variables:
+              position: 4
               icon: tv
               show_toggle: true
 
@@ -534,6 +584,7 @@ views:
             entity: media_player.YOUR_BEDROOM_SPEAKER
             name: Speaker
             variables:
+              position: 5
               icon: speaker
 
           # Active Energy (room-level power monitoring)
@@ -542,6 +593,7 @@ views:
             template: hemma_energy
             name: Active Energy
             variables:
+              position: 6
               room_name: Bedroom
               entity_power: sensor.YOUR_BEDROOM_POWER
               entity_usage_today: sensor.YOUR_BEDROOM_ENERGY_TODAY    # optional
@@ -554,6 +606,7 @@ views:
             entity: fan.YOUR_BEDROOM_FAN
             name: Fan
             variables:
+              position: 7
               icon: fan
               show_toggle: true
 
@@ -562,6 +615,7 @@ views:
             entity: cover.YOUR_BEDROOM_CURTAIN
             name: Curtain
             variables:
+              position: 8
               icon: curtain
 
           - type: custom:button-card
@@ -569,6 +623,7 @@ views:
             entity: fan.YOUR_AIR_PURIFIER
             name: Air Purifier
             variables:
+              position: 9
               icon: purifier
               show_toggle: true
 
@@ -577,6 +632,7 @@ views:
             entity: humidifier.YOUR_HUMIDIFIER
             name: Humidifier
             variables:
+              position: 10
               icon: humidifier
               show_toggle: true
 
@@ -586,6 +642,7 @@ views:
             entity: plant.YOUR_PLANT                      # e.g., plant.monstera
             name: Monstera
             variables:
+              position: 11
               sensors:
                 - sensor.YOUR_PLANT_MOISTURE
                 - sensor.YOUR_PLANT_ILLUMINANCE

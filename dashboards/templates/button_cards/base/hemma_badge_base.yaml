@@ -44,7 +44,7 @@ hemma_badge_base:
                     box-shadow .24s ease,
                     transform .24s ease,
                     filter .18s ease,
-                    opacity .35s ease !important
+                    opacity .35s ease
 
     grid:
       - grid-template-areas: '"i l"'
@@ -133,10 +133,16 @@ hemma_badge_base:
       transform: translateY(calc((1 - var(--hemma-row-fade, 1)) * -10px))
                  translateX(calc((1 - var(--hemma-row-fade, 1)) * -2px));
       box-shadow: none !important;
+      transition: background-color .22s ease,
+                  box-shadow .24s ease,
+                  transform .24s ease,
+                  filter .18s ease,
+                  opacity .35s ease !important;
     }
 
     ha-card:not(#hemma-badge-shadow-suppress):hover {
       box-shadow: none !important;
+      opacity: 0.99 !important;
     }
 
     ha-card::after{  z-index: var(--badge-after-z, 2) !important; }

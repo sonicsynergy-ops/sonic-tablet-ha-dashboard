@@ -27,6 +27,16 @@ hemma_room:
     - '[[[ return variables.media_player_8 ]]]'
     - '[[[ return variables.media_player_9 ]]]'
     - '[[[ return variables.media_player_10 ]]]'
+    - '[[[ return variables.psn_1 ]]]'
+    - '[[[ return variables.psn_2 ]]]'
+    - '[[[ return variables.discord_steam_image ]]]'
+    - '[[[ return variables.discord_steam_game ]]]'
+    - '[[[ return variables.discord_steam_online ]]]'
+    - '[[[ return variables.discord_steam_details ]]]'
+    - '[[[ return variables.plex_binary_1 ]]]'
+    - '[[[ return variables.plex_stream_1 ]]]'
+    - '[[[ return variables.plex_binary_2 ]]]'
+    - '[[[ return variables.plex_stream_2 ]]]'
     - '[[[ return variables.light_entity_1 ]]]'
     - '[[[ return variables.light_entity_2 ]]]'
     - '[[[ return variables.light_entity_3 ]]]'
@@ -119,6 +129,20 @@ hemma_room:
 
     show_media_player_10: false
     media_player_10:
+
+    show_plex_1: false
+    plex_binary_1:
+    plex_stream_1:
+
+    show_plex_2: false
+    plex_binary_2:
+    plex_stream_2:
+
+    show_psn_1: false
+    psn_1:
+
+    show_psn_2: false
+    psn_2:
 
     show_lights: false
     light_group_entity:
@@ -788,12 +812,12 @@ hemma_room:
               enabled: '[[[ return !!(variables.show_climate && variables.show_climate_inline && variables.quality_sensor) ]]]'
               room_name: '[[[ return variables.aqi_room_name ]]]'
               entity_quality: '[[[ return variables.quality_sensor ]]]'
+              entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
+              entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
               sensors: >-
                 [[[
                   return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
                 ]]]
-              entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
-              entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
 
           - type: custom:button-card
             template: hemma_badge_light_group
@@ -899,12 +923,12 @@ hemma_room:
               enabled: '[[[ return variables.show_climate && !!variables.quality_sensor ]]]'
               room_name: '[[[ return variables.aqi_room_name ]]]'
               entity_quality: '[[[ return variables.quality_sensor ]]]'
+              entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
+              entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
               sensors: >-
                 [[[
                   return [variables.aqi_entity_pm25,variables.aqi_entity_pm10,variables.aqi_entity_voc,variables.aqi_entity_co2].filter(Boolean);
                 ]]]
-              entity_temp: '[[[ return variables.aqi_entity_temp ]]]'
-              entity_humidity: '[[[ return variables.aqi_entity_humidity ]]]'
 
     badges_presence:
       card:
@@ -1410,7 +1434,143 @@ hemma_room:
                     if (st === 'paused') { const t = Number(variables.pause_timeout_minutes ?? 5); if (t > 0 && (new Date() - new Date(s.last_changed)) / 60000 > t) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s'; }
                     return 'max-width 0.001s ease, margin-right 0.001s ease';
                   ]]]
-
+            plex:
+              - max-width: >
+                  [[[
+                    if (!variables.show_plex_1 || !variables.plex_binary_1) return '0px';
+                    const s = states[variables.plex_binary_1];
+                    return (s && s.state === 'on') ? '600px' : '0px';
+                  ]]]
+              - margin-right: >
+                  [[[
+                    if (!variables.show_plex_1 || !variables.plex_binary_1) return '0px';
+                    const s = states[variables.plex_binary_1];
+                    return (s && s.state === 'on') ? 'var(--badge-gap-current, var(--badge-gap, 10px))' : '0px';
+                  ]]]
+              - transition: >
+                  [[[
+                    if (!variables.show_plex_1 || !variables.plex_binary_1) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const s = states[variables.plex_binary_1];
+                    return (s && s.state === 'on') ? 'max-width 0.001s ease, margin-right 0.001s ease' : 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                  ]]]
+            plex_2:
+              - max-width: >
+                  [[[
+                    if (!variables.show_plex_2 || !variables.plex_binary_2) return '0px';
+                    const s = states[variables.plex_binary_2];
+                    return (s && s.state === 'on') ? '600px' : '0px';
+                  ]]]
+              - margin-right: >
+                  [[[
+                    if (!variables.show_plex_2 || !variables.plex_binary_2) return '0px';
+                    const s = states[variables.plex_binary_2];
+                    return (s && s.state === 'on') ? 'var(--badge-gap-current, var(--badge-gap, 10px))' : '0px';
+                  ]]]
+              - transition: >
+                  [[[
+                    if (!variables.show_plex_2 || !variables.plex_binary_2) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const s = states[variables.plex_binary_2];
+                    return (s && s.state === 'on') ? 'max-width 0.001s ease, margin-right 0.001s ease' : 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                  ]]]
+            activity1:
+              - max-width: >
+                  [[[
+                    if (!variables.show_psn_1 || !variables.psn_1) return '0px';
+                    const s = states[variables.psn_1]; if (!s) return '0px';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return '450px';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? '450px' : '0px';
+                  ]]]
+              - margin-right: >
+                  [[[
+                    if (!variables.show_psn_1 || !variables.psn_1) return '0px';
+                    const s = states[variables.psn_1]; if (!s) return '0px';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return 'var(--badge-gap-current, var(--badge-gap, 10px))';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? 'var(--badge-gap-current, var(--badge-gap, 10px))' : '0px';
+                  ]]]
+              - transition: >
+                  [[[
+                    if (!variables.show_psn_1 || !variables.psn_1) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const s = states[variables.psn_1]; if (!s) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return 'max-width 0.001s ease, margin-right 0.001s ease';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? 'max-width 0.001s ease, margin-right 0.001s ease' : 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                  ]]]
+            activity2:
+              - max-width: >
+                  [[[
+                    if (!variables.show_psn_2 || !variables.psn_2) return '0px';
+                    const s = states[variables.psn_2]; if (!s) return '0px';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return '450px';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? '450px' : '0px';
+                  ]]]
+              - margin-right: >
+                  [[[
+                    if (!variables.show_psn_2 || !variables.psn_2) return '0px';
+                    const s = states[variables.psn_2]; if (!s) return '0px';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return 'var(--badge-gap-current, var(--badge-gap, 10px))';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? 'var(--badge-gap-current, var(--badge-gap, 10px))' : '0px';
+                  ]]]
+              - transition: >
+                  [[[
+                    if (!variables.show_psn_2 || !variables.psn_2) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const s = states[variables.psn_2]; if (!s) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const st = String(s.state || '').toLowerCase();
+                    const a = s.attributes || {};
+                    if (['playing','buffering','paused'].includes(st)) return 'max-width 0.001s ease, margin-right 0.001s ease';
+                    const title = String(a.media_title || a.title || '').trim();
+                    const artist = String(a.media_artist || a.artist || a.media_album_artist || '').trim();
+                    const app = String(a.app_name || a.source || '').trim();
+                    return (title || artist || app) ? 'max-width 0.001s ease, margin-right 0.001s ease' : 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                  ]]]
+            activity_steam:
+              - max-width: >
+                  [[[
+                    if (!variables.show_discord_steam || !variables.discord_steam_online || !variables.discord_steam_game) return '0px';
+                    const online = states[variables.discord_steam_online]; if (!online) return '0px';
+                    if (String(online.state || '').toLowerCase() !== 'online') return '0px';
+                    const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                    return (g && g !== 'unknown' && g !== 'unavailable') ? '450px' : '0px';
+                  ]]]
+              - margin-right: >
+                  [[[
+                    if (!variables.show_discord_steam || !variables.discord_steam_online || !variables.discord_steam_game) return '0px';
+                    const online = states[variables.discord_steam_online]; if (!online) return '0px';
+                    if (String(online.state || '').toLowerCase() !== 'online') return '0px';
+                    const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                    return (g && g !== 'unknown' && g !== 'unavailable') ? 'var(--badge-gap-current, var(--badge-gap, 10px))' : '0px';
+                  ]]]
+              - transition: >
+                  [[[
+                    if (!variables.show_discord_steam || !variables.discord_steam_online || !variables.discord_steam_game) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const online = states[variables.discord_steam_online]; if (!online) return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    if (String(online.state || '').toLowerCase() !== 'online') return 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                    const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                    return (g && g !== 'unknown' && g !== 'unavailable') ? 'max-width 0.001s ease, margin-right 0.001s ease' : 'max-width 0.001s ease 0.3s, margin-right 0.001s ease 0.3s';
+                  ]]]
         custom_fields:
           mp1:
             card:
@@ -1492,7 +1652,98 @@ hemma_room:
                 enabled: '[[[ return variables.show_media_player_10 ]]]'
                 entity: '[[[ return variables.media_player_10 ]]]'
                 pause_timeout_minutes: '[[[ return variables.pause_timeout_minutes ]]]'
+          plex:
+            card:
+              type: custom:button-card
+              template: hemma_badge_plex
+              entity: '[[[ return variables.plex_binary_1 ]]]'
+              variables:
+                enabled: '[[[ return variables.show_plex_1 ]]]'
+                session_entity: '[[[ return variables.plex_stream_1 ]]]'
 
+          plex_2:
+            card:
+              type: custom:button-card
+              template: hemma_badge_plex
+              entity: '[[[ return variables.plex_binary_2 ]]]'
+              variables:
+                enabled: '[[[ return variables.show_plex_2 ]]]'
+                session_entity: '[[[ return variables.plex_stream_2 ]]]'
+          activity1:
+            card:
+              type: custom:button-card
+              template: hemma_badge_activity
+              entity: '[[[ return variables.psn_1 ]]]'
+              variables:
+                enabled: '[[[ return variables.show_psn_1 ]]]'
+          activity2:
+            card:
+              type: custom:button-card
+              template: hemma_badge_activity
+              entity: '[[[ return variables.psn_2 ]]]'
+              variables:
+                enabled: '[[[ return variables.show_psn_2 ]]]'
+          activity_steam:
+            card:
+              type: custom:button-card
+              template: hemma_badge_activity
+              entity: '[[[ return variables.discord_steam_image ]]]'
+              entity_picture: >
+                [[[
+                  const s = states[variables.discord_steam_image];
+                  const url = s?.attributes?.entity_picture || s?.state;
+                  const bad = !url || ['unknown','unavailable',''].includes(String(url).toLowerCase()) || !String(url).startsWith('http');
+                  if (!bad) this._discordImgUrl = url;
+                  return this._discordImgUrl || null;
+                ]]]
+              variables:
+                enabled: >
+                  [[[
+                    if (!variables.show_discord_steam) return false;
+                    const online = states[variables.discord_steam_online];
+                    if (!online || String(online.state || '').toLowerCase() !== 'online') return false;
+                    const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                    return !!(g && g !== 'unknown' && g !== 'unavailable');
+                  ]]]
+              styles:
+                card:
+                  - --hemma-badge-opacity: >
+                      [[[
+                        if (!variables.show_discord_steam) return '0';
+                        const online = states[variables.discord_steam_online];
+                        if (!online || String(online.state || '').toLowerCase() !== 'online') return '0';
+                        const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                        return (g && g !== 'unknown' && g !== 'unavailable') ? '1' : '0';
+                      ]]]
+                  - --hemma-badge-ptr: >
+                      [[[
+                        if (!variables.show_discord_steam) return 'none';
+                        const online = states[variables.discord_steam_online];
+                        if (!online || String(online.state || '').toLowerCase() !== 'online') return 'none';
+                        const g = String(states[variables.discord_steam_game]?.state || '').toLowerCase();
+                        return (g && g !== 'unknown' && g !== 'unavailable') ? 'auto' : 'none';
+                      ]]]
+                  - --bg-url: >
+                      [[[
+                        const s = states[variables.discord_steam_image];
+                        const raw = s?.attributes?.entity_picture || s?.state;
+                        const bad = !raw || ['unknown','unavailable',''].includes(String(raw).toLowerCase()) || !String(raw).startsWith('http');
+                        if (!bad) {
+                          this._discordBgUrl = `url("${raw}")`;
+                        }
+                        return this._discordBgUrl || 'none';
+                      ]]]
+              name: >
+                [[[
+                  const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+                  const game = String(states[variables.discord_steam_game]?.state || '').trim();
+                  const details = String(states[variables.discord_steam_details]?.state || '').trim();
+                  const gameOk = game && !['unknown','unavailable'].includes(game.toLowerCase());
+                  const detailsOk = details && !['unknown','unavailable'].includes(details.toLowerCase());
+                  const title = 'PC';
+                  const sub = gameOk ? (detailsOk ? `${game} — ${details}` : game) : 'Online';
+                  return `<div class="badge-wrap"><div class="badge-title">${esc(title)}</div><div class="badge-sub">${esc(sub)}</div></div>`;
+                ]]]
     badges_lights:
       card:
         type: custom:layout-card
