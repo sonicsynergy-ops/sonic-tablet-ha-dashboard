@@ -1,4 +1,4 @@
-<img width="1473" height="936" alt="hemma" src="https://github.com/user-attachments/assets/829dc49d-4ad5-4081-8dc0-53a7f41576dc" />
+<img width="1481" height="932" alt="home-light" src="https://github.com/user-attachments/assets/fc4759ee-616d-4691-bc88-cf06faca397d" />
 
 # :house_with_garden: Hemma
 
@@ -60,7 +60,8 @@ Install via HACS (recommended) unless noted:
 <img width="615" height="618" alt="Screenshot 2026-05-14 at 2 24 40 PM" src="https://github.com/user-attachments/assets/f7f82bb8-1794-4ff7-b783-df06c4d2c56e" />
 
 #### Network (Dark Mode)
-<img width="615" height="621" alt="Screenshot 2026-05-14 at 10 35 54 PM" src="https://github.com/user-attachments/assets/52bd9243-8bb2-4ad0-8949-738c26e8dda9" />
+<img width="615" height="698" alt="Screenshot 2026-06-05 at 3 31 21 PM" src="https://github.com/user-attachments/assets/0d2ff95e-acab-4b43-9ca7-cf1ccac3f1a7" />
+
 
 #### Energy Usage
 <img width="615" height="510" alt="Screenshot 2026-05-14 at 2 25 01 PM" src="https://github.com/user-attachments/assets/03679456-4ebc-4952-b358-6a9822fa47a7" />
@@ -74,24 +75,25 @@ Install via HACS (recommended) unless noted:
 #### System Updates
 <img width="615" height="286" alt="Screenshot 2026-05-14 at 2 25 04 PM" src="https://github.com/user-attachments/assets/ca0d647a-6e5b-4fc7-881b-c05537c001f5" />
 
+#### Plex Recently Added
+<img width="615" height="440" alt="Screenshot 2026-06-05 at 3 29 03 PM" src="https://github.com/user-attachments/assets/e373f3c7-fffe-449a-b22f-03b214a6b992" />
+
 ---
 
 ### Desktop View
-![desktop-home-light](https://github.com/user-attachments/assets/b7597e0b-5559-4790-aec1-cf7e0a6ef472)
-![desktop-livingroom-light](https://github.com/user-attachments/assets/7e90d921-abc3-49a7-8a92-c2717c7baa45)
+<img width="1481" height="932" alt="living-room-light" src="https://github.com/user-attachments/assets/eee87339-1e23-4e9b-bf9d-4d04731f07dc" />
 
 ### Light/Dark Mode
-![desktop-bedroom-light](https://github.com/user-attachments/assets/a40d65d0-b723-492a-97dc-bb936c17affa)
-![desktop-bedroom-dark](https://github.com/user-attachments/assets/aa904c06-7d6e-47b4-ab26-24e676bf6095)
+<img width="1481" height="932" alt="living-room-light" src="https://github.com/user-attachments/assets/125fab62-14b1-4b19-bdcc-c9f715ac46b4" />
+<img width="1481" height="932" alt="living-room-light" src="https://github.com/user-attachments/assets/8414710f-0a15-4551-95ae-324312f1c35f" />
 
 ### Mobile View (Light/Dark)
-<img src="https://github.com/user-attachments/assets/254a44d4-0080-4161-926e-732d2b503060" width="404">
-<img src="https://github.com/user-attachments/assets/97e403d3-48af-43ac-8077-46992825b337" width="404">
+<img src="https://github.com/user-attachments/assets/7e173334-9898-4102-9c37-700f324e6fef" width="404">
+<img src="https://github.com/user-attachments/assets/921ea303-1e80-496f-b111-626f3b4d560c" width="404">
 
 ### Tablet View (Light/Dark)
-![tablet-livingroom-light 2](https://github.com/user-attachments/assets/41ef6a99-2634-4026-a188-ec20979cc088)
-![tablet-livingroom-dark](https://github.com/user-attachments/assets/12bac700-a2a2-4f6c-aba7-f6e86123d7e2)
-
+<img width="1200" height="900" alt="living-room-light-tablet" src="https://github.com/user-attachments/assets/1fd685b0-6a9e-4087-a182-13c1f5567477" />
+<img width="1200" height="900" alt="living-room-dark-tablet" src="https://github.com/user-attachments/assets/c9a8dafb-4749-444a-93a7-0783502b98de" />
 
 ---
 
