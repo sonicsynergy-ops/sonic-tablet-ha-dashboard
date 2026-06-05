@@ -1374,7 +1374,6 @@ Hemma:
         background: var(--sidebar-background-color) !important;
         backdrop-filter: blur(20px) saturate(1.2) !important;
         -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-        will-change: backdrop-filter;
         box-shadow: none !important;
         border: 0 !important;
         outline: none !important;
