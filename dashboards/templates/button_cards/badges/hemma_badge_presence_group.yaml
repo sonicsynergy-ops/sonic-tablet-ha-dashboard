@@ -45,47 +45,31 @@ hemma_badge_presence_group:
     - '[[[ return variables?.entity_3 ]]]'
     - '[[[ return variables?.entity_4 ]]]'
 
-  extra_styles: >
-    [[[
-      const SVG_URL  = "/local/hemma/icons/person.svg";
-      const MASK_PCT = 85;
-      const INSET_PX = 2;
+  extra_styles: |
+    #img-cell, .img-cell{ position: relative; }
 
-      const v = variables?.enabled;
-      const enabled = (v === undefined || v === null) ? true :
-        (typeof v === 'boolean') ? v :
-        (typeof v === 'number') ? v !== 0 :
-        !['false','0','no','off','disabled'].includes(String(v).trim().toLowerCase());
+    #img-cell #icon, .img-cell #icon{
+      color: transparent !important;
+      opacity: 0 !important;
+      --icon-primary-color: var(--hemma-badge-icon-color) !important;
+      --paper-item-icon-color: var(--hemma-badge-icon-color) !important;
+      --state-icon-color: var(--hemma-badge-icon-color) !important;
+      --card-mod-icon-color: var(--hemma-badge-icon-color) !important;
+    }
 
-      const hasAny = !!(variables?.entity_1 || variables?.entity_2 || variables?.entity_3 || variables?.entity_4);
-      return `
-        :host{display:${(enabled && hasAny) ? 'inline-block' : 'none'} !important;}
+    #img-cell::before,
+    .img-cell::before{
+      content: '';
+      position: absolute;
+      inset: 2px;
+      z-index: 5;
+      background-color: var(--hemma-badge-icon-color, var(--primary-text-color)) !important;
 
-        #img-cell, .img-cell{ position: relative; }
+      -webkit-mask: url('/local/hemma/icons/person.svg') no-repeat center / 85% 85%;
+      mask: url('/local/hemma/icons/person.svg') no-repeat center / 85% 85%;
 
-        #img-cell #icon, .img-cell #icon{
-          color: transparent !important;
-          opacity: 0 !important;
-          --icon-primary-color: var(--hemma-badge-icon-color) !important;
-          --paper-item-icon-color: var(--hemma-badge-icon-color) !important;
-          --state-icon-color: var(--hemma-badge-icon-color) !important;
-          --card-mod-icon-color: var(--hemma-badge-icon-color) !important;
-        }
-
-        #img-cell::before,
-        .img-cell::before{
-          content: '';
-          position: absolute;
-          inset: ${INSET_PX}px;
-          background-color: var(--hemma-badge-icon-color, var(--primary-text-color)) !important;
-
-          -webkit-mask: url('${SVG_URL}') no-repeat center / ${MASK_PCT}% ${MASK_PCT}%;
-          mask: url('${SVG_URL}') no-repeat center / ${MASK_PCT}% ${MASK_PCT}%;
-
-          transform: translateZ(0);
-        }
-      `;
-    ]]]
+      transform: translateZ(0);
+    }
 
   styles:
     card:

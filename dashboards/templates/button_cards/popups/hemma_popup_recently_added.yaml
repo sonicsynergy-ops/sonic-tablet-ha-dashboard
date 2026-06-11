@@ -53,11 +53,13 @@ hemma_popup_recently_added:
 
             const rawM = Array.isArray(moviesData) ? moviesData.slice(1).filter(i => i && i.title) : [];
             const rawT = Array.isArray(tvData)     ? tvData.slice(1).filter(i => i && i.title)     : [];
-            /* merge and sort by most recently added (airdate desc) */
+            /* merge, filter to last 3 days, and sort by most recently added (airdate desc) */
+            const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
             const items = [
               ...rawM.map(i => Object.assign({}, i, {_isTV: false})),
               ...rawT.map(i => Object.assign({}, i, {_isTV: true})),
-            ].sort((a, b) => new Date(b.airdate || 0) - new Date(a.airdate || 0));
+            ].filter(i => i.airdate && new Date(i.airdate).getTime() >= cutoff)
+             .sort((a, b) => new Date(b.airdate || 0) - new Date(a.airdate || 0));
             const N = items.length;
 
             /* ── helpers ─────────────────────────────────── */
@@ -84,14 +86,80 @@ hemma_popup_recently_added:
 
             /* ── empty state ─────────────────────────────── */
             if (N === 0) {
-              return {
+              const noHoverStyle = [
+                ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                'ha-card { background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }',
+                'ha-card:hover { box-shadow: none !important; border-color: transparent !important; }',
+                'ha-ripple { display: none !important; }',
+              ].join('\n');
+
+              const g1 = '#57FFFC'; const g2 = '#67F5A0';
+              const emptyBadge = {
                 type: 'custom:button-card',
-                entity: 'sensor.recently_added_movies',
+                name: 'Up to date',
+                tap_action: { action: 'none' },
+                show_icon: false, show_name: true, show_label: false, show_state: false,
+                card_mod: {
+                  style: [
+                    ':host { --ha-card-box-shadow: none !important; --button-card-box-shadow: none !important; --button-card-box-shadow-hover: none !important; }',
+                    'ha-card { background: linear-gradient(135deg,color-mix(in srgb,' + g1 + ' 18%,transparent) 0%,color-mix(in srgb,' + g2 + ' 13%,transparent) 100%) !important; border: 1px solid color-mix(in srgb,' + g1 + ' 40%,transparent) !important; border-radius: 999px !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }',
+                    'ha-ripple { display: none !important; }',
+                  ].join('\n'),
+                },
+                styles: {
+                  card: [
+                    { background: 'linear-gradient(135deg,color-mix(in srgb,' + g1 + ' 18%,transparent) 0%,color-mix(in srgb,' + g2 + ' 13%,transparent) 100%)' },
+                    { border: '1px solid color-mix(in srgb,' + g1 + ' 40%,transparent)' },
+                    { 'border-radius': '999px' }, { 'box-shadow': 'none' }, { padding: '8px 15px' },
+                  ],
+                  name: [
+                    { 'font-size': '15px' }, { 'font-weight': '500' },
+                    { color: 'var(--hemma-popup-green-color, #67f5a0)' },
+                    { 'white-space': 'nowrap' }, { 'font-family': 'var(--primary-font-family,system-ui)' },
+                  ],
+                },
+              };
+
+              const emptyHeader = {
+                type: 'custom:button-card',
                 tap_action: { action: 'none' },
                 show_icon: false, show_name: false, show_label: false, show_state: false,
-                styles: { card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '40px' }] },
-                name: '<div style="text-align:left;color:rgba(255,255,255,0.5);font-size:14px;">Nothing recently added</div>',
+                card_mod: { style: noHoverStyle },
+                styles: {
+                  card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '28px 28px 0 28px' }],
+                  grid: [{ 'grid-template-areas': '"title badge"' }, { 'grid-template-columns': '1fr auto' }, { 'align-items': 'flex-start' }],
+                  custom_fields: {
+                    title: [{ 'justify-self': 'start' }, { 'text-align': 'left' }],
+                    badge: [{ 'justify-self': 'end' }, { 'align-self': 'flex-start' }],
+                  },
+                },
+                custom_fields: {
+                  title: '<div style="font-family:var(--primary-font-family,system-ui);color:var(--hemma-popup-tile-text-primary);">'
+                    + '<div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">Media</div>'
+                    + '<div style="font-size:14px;color:var(--hemma-popup-tile-text-secondary);font-weight:400;">Plex \xb7 Recently Added</div>'
+                    + '</div>',
+                  badge: { card: emptyBadge },
+                },
               };
+
+              const emptyAdvice = {
+                type: 'custom:button-card',
+                tap_action: { action: 'none' },
+                show_icon: false, show_name: false, show_label: false, show_state: false,
+                card_mod: { style: noHoverStyle },
+                styles: {
+                  card: [{ background: 'transparent' }, { border: 'none' }, { 'box-shadow': 'none' }, { padding: '20px 28px 18px 28px' }],
+                  grid: [{ 'grid-template-areas': '"body"' }, { 'grid-template-columns': '1fr' }],
+                  custom_fields: { body: [{ 'justify-self': 'stretch' }, { width: '100%' }, { 'text-align': 'left' }] },
+                },
+                custom_fields: {
+                  body: '<div style="font-family:var(--primary-font-family,system-ui);">'
+                    + '<div style="font-size:22px;color:var(--primary-text-color,#e4e7eb);font-weight:400;letter-spacing:-.5px;">Nothing recently added</div>'
+                    + '</div>',
+                },
+              };
+
+              return { type: 'vertical-stack', cards: [emptyHeader, emptyAdvice] };
             }
 
             /* ── responsive layout ──────────────────────────── */
@@ -258,6 +326,10 @@ hemma_popup_recently_added:
             };
 
             /* ── swipe-card (carousel, rounded bottom corners) ── */
+            const bulletCss = items.map(function(item, idx) {
+              const clr = item._isTV ? '#A547FE' : '#FA7D24';
+              return '.swiper-pagination-bullet:nth-child(' + (idx+1) + ').swiper-pagination-bullet-active{width:30px!important;background:' + clr + '!important;}';
+            }).join('');
             const swipeCard = {
               type: 'custom:swipe-card',
               card_mod: {
@@ -267,14 +339,12 @@ hemma_popup_recently_added:
                   + 'border:none!important;'
                   + 'border-radius:0 0 16px 16px!important;'
                   + 'overflow:hidden!important;'
-                  + '--swiper-pagination-color:var(--primary-color,rgba(255,255,255,0.9));'
-                  + '--swiper-theme-color:rgba(255,255,255,0.9);'
                   + '}'
                   + '.swiper,.swiper-container{height:' + swipeH + 'px!important;border-radius:0 0 16px 16px!important;overflow:hidden!important;}'
                   + '.swiper-slide{width:100%!important;max-width:none!important;flex-shrink:0!important;}'
                   + '.swiper-pagination-bullets{display:flex!important;flex-direction:row!important;gap:8px!important;align-items:center!important;justify-content:center!important;}'
                   + '.swiper-pagination-bullet{width:15px!important;height:7px!important;border-radius:3px!important;background:rgba(255,255,255,0.15)!important;opacity:.9!important;margin:0!important;flex-shrink:0!important;transition:width 0.25s,background 0.25s!important;}'
-                  + '.swiper-pagination-bullet-active{width:30px!important;background:var(--primary-color,rgba(255,255,255,0.9))!important;}',
+                  + bulletCss,
               },
               cards: slideCards,
               parameters: {

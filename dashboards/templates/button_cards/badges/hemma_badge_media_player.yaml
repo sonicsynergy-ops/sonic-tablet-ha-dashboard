@@ -385,9 +385,10 @@ hemma_badge_media_player:
 
     :host ha-card{
       cursor: pointer;
-      opacity: var(--hemma-badge-opacity, 0);
       pointer-events: var(--hemma-badge-ptr, none);
-      transition: opacity 0.3s ease, box-shadow 0.2s ease;
+      opacity: 1 !important;
+      transform: none !important;
+      transition: box-shadow 0.2s ease !important;
     }
 
     :host ha-card:not(#hemma-badge-shadow-suppress):hover{
@@ -411,7 +412,6 @@ hemma_badge_media_player:
       filter: blur(26px) saturate(2.0);
       opacity: .62;
       transform: scale(1.25);
-      transition: opacity .22s ease, filter .18s ease !important;
     }
 
     :host ha-card::before{

@@ -54,7 +54,9 @@ hemma_battery:
         ]]]
       styles:
         card:
-          - background: var(--hemma-entity-background-active)
+          - "--hemma-active-overlay-opacity": "1"
+          - "--hemma-active-overlay-dur": "0s"
+          - --hemma-entity-top-gradient: none
           - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
         name:
           - color: var(--hemma-entity-name-active, var(--primary-text-color))

@@ -62,92 +62,31 @@ hemma_badge_media_group:
     - '[[[ return variables?.steam_online_entity ]]]'
     - '[[[ return variables?.steam_game_entity ]]]'
 
-  extra_styles: >
-    [[[
-      const SVG_URL  = "/local/hemma/icons/media.svg";
-      const MASK_PCT = 100;
-      const INSET_PX = 2;
+  extra_styles: |
+    #img-cell, .img-cell{ position: relative; }
 
-      const enabled = (v) => {
-        if (v === undefined || v === null) return true;
-        if (typeof v === 'boolean') return v;
-        if (typeof v === 'number') return v !== 0;
-        return !['false','0','no','off','disabled'].includes(String(v).trim().toLowerCase());
-      };
+    #img-cell #icon, .img-cell #icon{
+      color: transparent !important;
+      opacity: 0 !important;
+      --icon-primary-color: var(--hemma-icon-color) !important;
+      --paper-item-icon-color: var(--hemma-icon-color) !important;
+      --state-icon-color: var(--hemma-icon-color) !important;
+      --card-mod-icon-color: var(--hemma-icon-color) !important;
+    }
 
-      const isActive = (eid) => {
-        if (!eid) return false;
-        const s = hass.states[eid];
-        if (!s) return false;
-        const st = String(s.state || '').toLowerCase();
-        if (['unavailable','unknown','off','standby'].includes(st)) return false;
-        if (['playing','buffering','on'].includes(st)) return true;
-        const a = s.attributes || {};
-        const hasContent = !!(
-          String(a.media_title || '').trim() ||
-          String(a.media_artist || a.artist || a.media_album_artist || '').trim()
-        );
-        if (!hasContent) return false;
-        if (st === 'paused') {
-          const timeout = Number(variables?.pause_timeout_minutes ?? 5);
-          if (timeout <= 0) return true;
-          return ((new Date() - new Date(s.last_changed)) / 60000) <= timeout;
-        }
-        return st === 'idle';
-      };
+    #img-cell::before,
+    .img-cell::before{
+      content: '';
+      position: absolute;
+      inset: 2px;
+      z-index: 5;
+      background-color: var(--hemma-icon-color, var(--primary-text-color)) !important;
 
-      const isSteamActive = () => {
-        const onlineEntity = variables?.steam_online_entity;
-        const gameEntity = variables?.steam_game_entity;
-        if (!onlineEntity || !gameEntity) return false;
+      -webkit-mask: url('/local/hemma/icons/media.svg') no-repeat center / 100% 100%;
+      mask: url('/local/hemma/icons/media.svg') no-repeat center / 100% 100%;
 
-        const online = String(hass.states[onlineEntity]?.state || '').toLowerCase();
-        const game = String(hass.states[gameEntity]?.state || '').toLowerCase();
-
-        return online === 'online' && !!game && game !== 'unknown' && game !== 'unavailable';
-      };
-
-      const eids = [
-        variables?.entity_1, variables?.entity_2, variables?.entity_3, variables?.entity_4,
-        variables?.entity_5, variables?.entity_6, variables?.entity_7, variables?.entity_8,
-        variables?.entity_9, variables?.entity_10, variables?.entity_11, variables?.entity_12,
-        variables?.entity_13, variables?.entity_14
-      ].filter(Boolean);
-
-      const activeCount = enabled(variables?.enabled)
-        ? eids.filter(e => isActive(e)).length + (isSteamActive() ? 1 : 0)
-        : 0;
-
-      const show = enabled(variables?.enabled) && activeCount > 0;
-
-      return `
-        :host{display:${show ? 'inline-block' : 'none'} !important;}
-
-        #img-cell, .img-cell{ position: relative; }
-
-        #img-cell #icon, .img-cell #icon{
-          color: transparent !important;
-          opacity: 0 !important;
-          --icon-primary-color: var(--hemma-icon-color) !important;
-          --paper-item-icon-color: var(--hemma-icon-color) !important;
-          --state-icon-color: var(--hemma-icon-color) !important;
-          --card-mod-icon-color: var(--hemma-icon-color) !important;
-        }
-
-        #img-cell::before,
-        .img-cell::before{
-          content: '';
-          position: absolute;
-          inset: ${INSET_PX}px;
-          background-color: var(--hemma-icon-color, var(--primary-text-color)) !important;
-
-          -webkit-mask: url('${SVG_URL}') no-repeat center / ${MASK_PCT}% ${MASK_PCT}%;
-          mask: url('${SVG_URL}') no-repeat center / ${MASK_PCT}% ${MASK_PCT}%;
-
-          transform: translateZ(0);
-        }
-      `;
-    ]]]
+      transform: translateZ(0);
+    }
 
   styles:
     icon:

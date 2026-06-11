@@ -51,7 +51,9 @@ hemma_lock:
     - value: unlocked
       styles:
         card:
-          - background-color: var(--hemma-entity-background-active)
+          - "--hemma-active-overlay-opacity": "1"
+          - "--hemma-active-overlay-dur": "0s"
+          - --hemma-entity-top-gradient: none
           - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
           - --hemma-icon-color-current: var(--hemma-popup-primary-color, #00c3d0)
           - --hemma-icon-svg-url: "url('/local/hemma/icons/lock-open.svg')"

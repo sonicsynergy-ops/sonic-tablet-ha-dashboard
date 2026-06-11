@@ -125,7 +125,7 @@ hemma_menu_icon:
       }
     }
 
-    @media (min-width:768px) and (max-width:1366px) and (orientation: portrait){
+    @media (min-width:768px) and (max-width:1400px) and (orientation: portrait){
       :host{
         top: 6px !important;
         left: calc(var(--hero-gutter, 10px) - 16px) !important;

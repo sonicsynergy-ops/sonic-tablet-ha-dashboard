@@ -4,7 +4,7 @@ hemma_plex_recently_added:
     - hemma_popup_recently_added
 
   variables:
-    icon: tv-play
+    icon: plex
 
   triggers_update:
     - sensor.plex_recently_added_count
@@ -17,21 +17,33 @@ hemma_plex_recently_added:
 
   state_display: |
     [[[
-      const count = parseInt(states['sensor.plex_recently_added_count']?.state) || 0;
+      const moviesData = states['sensor.recently_added_movies']?.attributes?.data;
+      const tvData     = states['sensor.recently_added_tv']?.attributes?.data;
+      const rawM = Array.isArray(moviesData) ? moviesData.slice(1).filter(i => i && i.title) : [];
+      const rawT = Array.isArray(tvData)     ? tvData.slice(1).filter(i => i && i.title)     : [];
+      const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+      const count = [...rawM, ...rawT].filter(i => i.airdate && new Date(i.airdate).getTime() >= cutoff).length;
       if (count <= 0) return 'Up to date';
-      return count === 1 ? '1 added' : `${count} added`;
+      return count === 1 ? '1 Added' : `${count} Added`;
     ]]]
 
   state:
     - operator: template
       value: |
         [[[
-          const count = parseInt(states['sensor.plex_recently_added_count']?.state) || 0;
+          const moviesData = states['sensor.recently_added_movies']?.attributes?.data;
+          const tvData     = states['sensor.recently_added_tv']?.attributes?.data;
+          const rawM = Array.isArray(moviesData) ? moviesData.slice(1).filter(i => i && i.title) : [];
+          const rawT = Array.isArray(tvData)     ? tvData.slice(1).filter(i => i && i.title)     : [];
+          const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+          const count = [...rawM, ...rawT].filter(i => i.airdate && new Date(i.airdate).getTime() >= cutoff).length;
           return count > 0;
         ]]]
       styles:
         card:
-          - background: var(--hemma-entity-background-active)
+          - "--hemma-active-overlay-opacity": "1"
+          - "--hemma-active-overlay-dur": "0s"
+          - --hemma-entity-top-gradient: none
           - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
         name:
           - color: var(--hemma-entity-name-active, var(--primary-text-color))
@@ -40,7 +52,7 @@ hemma_plex_recently_added:
         img_cell:
           - opacity: "1 !important"
           - filter: none !important
-          - background: "#e5a00d !important"
+          - background: "var(--hemma-color-yellow, #e5a00d) !important"
         entity_picture:
           - opacity: "1 !important"
           - filter: none !important
@@ -59,22 +71,22 @@ hemma_plex_recently_added:
     }
     #img-cell::before { opacity: 0 !important; }
     #img-cell img {
-      width: 68% !important;
-      height: 68% !important;
-      max-width: 68% !important;
-      max-height: 68% !important;
+      width: 50% !important;
+      height: 50% !important;
+      max-width: 50% !important;
+      max-height: 50% !important;
       object-fit: contain !important;
       flex: none !important;
     }
     #img-cell ha-icon {
-      --mdc-icon-size: 26px !important;
+      --mdc-icon-size: 22px !important;
       flex: none !important;
       color: rgba(255,255,255,1.0) !important;
     }
     #icon { color: rgba(255,255,255,1.0) !important; }
     @media (max-width: 767px) and (orientation: portrait) {
       #img-cell { width: 38px !important; height: 38px !important; }
-      #img-cell ha-icon { --mdc-icon-size: 23px !important; }
+      #img-cell ha-icon { --mdc-icon-size: 19px !important; }
     }
     @media (hover: hover) {
       #img-cell:hover { filter: brightness(1.15); transform: scale(1.03); transition: filter 0.15s ease, transform 0.15s ease; }

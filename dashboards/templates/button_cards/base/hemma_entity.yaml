@@ -93,7 +93,8 @@ hemma_entity:
     /* Desktop + tablet: slide in from right */
     ha-card {
       animation: hemmaFadeInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-      animation-delay: var(--delay-d, 0s);
+      animation-delay: var(--hemma-anim-delay, var(--delay-d, 0s));
+      animation-play-state: var(--hemma-init-play, running);
       will-change: opacity, transform;
     }
 
@@ -101,7 +102,8 @@ hemma_entity:
     @media (max-width: 767px) and (orientation: portrait) {
       ha-card {
         animation: hemmaFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-        animation-delay: var(--delay, 0s);
+        animation-delay: var(--hemma-anim-delay, var(--delay, 0s));
+        animation-play-state: var(--hemma-init-play, running);
       }
     }
 
@@ -192,12 +194,32 @@ hemma_entity:
       border-radius: inherit;
       pointer-events: none;
       z-index: -1;
-      background-color: var(--hemma-entity-background-active);
+      background: var(--hemma-entity-active-gradient, rgba(255,255,255,0.25));
       opacity: var(--hemma-active-overlay-opacity, 0);
       transition: opacity var(--hemma-active-overlay-dur, .5s) ease;
     }
 
+    @media (max-width: 767px), (max-height: 600px) {
+      ha-card::after {
+        background: var(--hemma-entity-active-gradient-mobile, var(--hemma-entity-active-gradient, rgba(255,255,255,0.25)));
+      }
+    }
+
     :host { scroll-snap-align: start; }
+
+  card_mod:
+    style: |
+      ha-card::after {
+        transition: opacity var(--hemma-active-overlay-dur, .40s) ease !important;
+      }
+      @media (hover: hover) {
+        :host(:hover) ha-card::after {
+          transition: opacity .18s ease !important;
+        }
+        :host(:hover) ha-card {
+          --hemma-active-overlay-opacity: var(--hemma-hover-overlay-opacity, 0.10);
+        }
+      }
 
   custom_fields:
     toggle:
@@ -260,7 +282,8 @@ hemma_entity:
               const animStyle = shouldAnimate ? `animation:${anim} 0.2s ease forwards;` : '';
               const circleCx = (!shouldAnimate && isOn) ? cx0 + travel : cx0;
               const mid = 'htm-' + entity.entity_id.replace(/[^a-z0-9]/gi, '-');
-              const trackFill = (mob && isOn) ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.85)';
+              const trackFillVar = getComputedStyle(document.documentElement).getPropertyValue('--hemma-toggle-track-fill').trim();
+              const trackFill = mob ? (trackFillVar || 'rgba(255,255,255,0.85)') : 'rgba(255,255,255,0.85)';
               const offColor = 'rgba(255,255,255,0.8)';
               if (isOn) {
                 return `<svg width="${SW}" height="${H}" viewBox="0 0 ${SW} ${H}" style="display:block;overflow:visible;"><defs><mask id="${mid}"><rect x="2" y="1" width="${W-2}" height="${H-2}" rx="${(H-2)/2}" fill="white"/><circle cx="${circleCx}" cy="${H/2}" r="${r}" fill="black" style="${animStyle}"/></mask></defs><rect x="2" y="1" width="${W-2}" height="${H-2}" rx="${(H-2)/2}" fill="${trackFill}" mask="url(#${mid})"/></svg>`;
@@ -385,6 +408,7 @@ hemma_entity:
           - box-shadow: var(--hemma-button-card-box-shadow-active-current, var(--button-card-box-shadow-active, var(--button-card-box-shadow))) !important
           - "--hemma-active-overlay-opacity": "1"
           - "--hemma-active-overlay-dur": "0s"
+          - --hemma-entity-top-gradient: none
           - --hemma-toggle-opacity: var(--hemma-toggle-active-opacity, 0.70)
           - --hemma-icon-color-current: |
               [[[
@@ -633,7 +657,7 @@ hemma_entity:
       - font-size: var(--hemma-entity-state-font-current, var(--hemma-entity-state-font-desktop, 15px))
       - text-shadow: var(--hemma-entity-text-shadow, 0 0 5px rgba(0,0,0,0.1))
       - justify-self: start
-      - font-weight: 600
+      - font-weight: 500
       - line-height: 1.15
       - transition: color .18s ease, opacity .18s ease
 

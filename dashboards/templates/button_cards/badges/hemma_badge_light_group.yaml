@@ -235,47 +235,27 @@ hemma_badge_light_group:
     - '[[[ return variables?.entity_7 ]]]'
     - '[[[ return variables?.entity_8 ]]]'
 
-  extra_styles: >
-    [[[
-      const v = variables?.enabled;
-      const enabled = (v === undefined || v === null) ? true :
-        (typeof v === 'boolean') ? v :
-        (typeof v === 'number') ? v !== 0 :
-        !['false','0','no','off','disabled'].includes(String(v).trim().toLowerCase());
+  extra_styles: |
+    #img-cell, .img-cell{ position: relative; }
 
-      const eids = [
-        variables?.entity_1, variables?.entity_2, variables?.entity_3, variables?.entity_4,
-        variables?.entity_5, variables?.entity_6, variables?.entity_7, variables?.entity_8
-      ].filter(Boolean);
+    #img-cell #icon, .img-cell #icon{
+      color: transparent !important;
+      opacity: 0 !important;
+    }
 
-      const SVG_URL  = "/local/hemma/icons/light.svg";
-      const ICON_PCT = 78;
-      const INSET_PX = 0;
+    #img-cell::before,
+    .img-cell::before{
+      content: '';
+      position: absolute;
+      inset: 0px;
+      z-index: 5;
+      background-color: var(--hemma-icon-color, var(--primary-text-color)) !important;
 
-      return `
-        :host{display:${(enabled && eids.length > 0) ? 'inline-block' : 'none'} !important;}
+      -webkit-mask: url('/local/hemma/icons/light.svg') no-repeat center / 78% 78%;
+      mask: url('/local/hemma/icons/light.svg') no-repeat center / 78% 78%;
 
-        #img-cell, .img-cell{ position: relative; }
-
-        #img-cell #icon, .img-cell #icon{
-          color: transparent !important;
-          opacity: 0 !important;
-        }
-
-        #img-cell::before,
-        .img-cell::before{
-          content: '';
-          position: absolute;
-          inset: ${INSET_PX}px;
-          background-color: var(--hemma-icon-color, var(--primary-text-color)) !important;
-
-          -webkit-mask: url('${SVG_URL}') no-repeat center / ${ICON_PCT}% ${ICON_PCT}%;
-          mask: url('${SVG_URL}') no-repeat center / ${ICON_PCT}% ${ICON_PCT}%;
-
-          transform: translateZ(0);
-        }
-      `;
-    ]]]
+      transform: translateZ(0);
+    }
 
   styles:
 

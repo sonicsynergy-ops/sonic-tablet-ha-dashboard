@@ -299,6 +299,21 @@ script:
                 target:
                   entity_id: "{{ light_entity }}"
 
+  hemma_thermostat_overlay_toggle:
+    alias: "Hemma - Thermostat Overlay Toggle"
+    description: >
+      Debounced toggle for the thermostat temperature controls overlay.
+      mode: single means any taps that arrive while this script is running
+      (including the 400ms cooldown) are silently dropped, preventing the
+      rapid-fire queue buildup that causes the animation to stutter.
+    mode: single
+    sequence:
+      - service: input_boolean.toggle
+        data:
+          entity_id: input_boolean.hemma_thermostat_overlay
+      - delay:
+          milliseconds: 400
+
 automation:
   - alias: "Hemma - Auto clear restart done state 1"
     id: hemma_auto_clear_restart_done_1
@@ -350,4 +365,3 @@ automation:
         data:
           entity_id: input_select.hemma_expanded_row
           option: media
-

@@ -234,7 +234,7 @@ hemma_room:
           [[[
             const w = window?.innerWidth || 1024;
             const h = window?.innerHeight || 800;
-            const isTablet = (w >= 768 && w <= 1366 && h > 500);
+            const isTablet = (w >= 768 && w <= 1400 && h > 500);
             return isTablet ? '140px' : '160px';
           ]]]
       - --hemma-room-nav: >
@@ -395,6 +395,8 @@ hemma_room:
         - margin-bottom: 0
         - padding-left: 0
         - pointer-events: auto
+        - touch-action: pan-x
+        - overscroll-behavior-x: contain
         - height: auto !important
         - display: >
             [[[
@@ -441,6 +443,8 @@ hemma_room:
             ]]]
         - overflow-x: auto
         - overflow-y: hidden
+        - touch-action: pan-x
+        - overscroll-behavior-x: contain
         - --hemma-row-fade: >
             [[[
               if (!variables.show_climate || variables.show_climate_inline) return 0;
@@ -501,6 +505,8 @@ hemma_room:
             ]]]
         - overflow-x: auto
         - overflow-y: hidden
+        - touch-action: pan-x
+        - overscroll-behavior-x: contain
         - --hemma-row-fade: >
             [[[
               if (!variables.show_presence) return 0;
@@ -546,6 +552,7 @@ hemma_room:
         - padding-bottom: 0px !important
         - height: auto !important
         - opacity: var(--hemma-row-fade, 0)
+        - transform: translateY(calc((1 - var(--hemma-row-fade, 0)) * -8px))
         - min-height: 0 !important
         - width: max-content
         - max-width: 100%
@@ -563,6 +570,8 @@ hemma_room:
             ]]]
         - overflow-x: auto
         - overflow-y: hidden
+        - touch-action: pan-x
+        - overscroll-behavior-x: contain
         - --hemma-row-fade: >
             [[[
               if (!variables.show_media) return 0;
@@ -571,17 +580,28 @@ hemma_room:
             ]]]
         - transition: >
             [[[
-              const isExpanded = states['input_select.hemma_expanded_row']?.state === 'media';
+              const currentState = states['input_select.hemma_expanded_row']?.state;
+              const isExpanded = currentState === 'media';
 
               if (isExpanded) {
-                return 'max-height 0s, margin-top 0s, opacity 0s';
+                // Suppress animation within 3s of page load — covers the
+                // hemma_auto_expand_media_row automation that fires on HA start
+                if (!window.hemmaPageLoadTime) window.hemmaPageLoadTime = Date.now();
+                if (Date.now() - window.hemmaPageLoadTime < 3000) return 'none';
+
+                // After 3s, only animate for genuine user taps (last_changed < 1.5s ago)
+                const lastChanged = states['input_select.hemma_expanded_row']?.last_changed;
+                const msSince = lastChanged ? (Date.now() - new Date(lastChanged).getTime()) : Infinity;
+                return msSince < 1500
+                  ? 'max-height 0s, margin-top 0s, opacity 0.25s ease, transform 0.25s ease'
+                  : 'none';
               }
 
-              const isSwitching = states['input_select.hemma_expanded_row']?.state !== 'none';
+              const isSwitching = currentState !== 'none';
 
               return isSwitching
-                ? 'max-height 0s, margin-top 0s, opacity 0.22s ease'
-                : 'max-height 0s 0.35s, margin-top 0s 0.35s, opacity 0.22s ease';
+                ? 'max-height 0s, margin-top 0s, opacity 0.22s ease, transform 0.22s ease'
+                : 'max-height 0s 0.35s, margin-top 0s 0.35s, opacity 0.22s ease, transform 0.22s ease';
             ]]]
         - pointer-events: >
             [[[
@@ -626,6 +646,8 @@ hemma_room:
             ]]]
         - overflow-x: auto
         - overflow-y: hidden
+        - touch-action: pan-x
+        - overscroll-behavior-x: contain
         - --hemma-row-fade: >
             [[[
               if (!variables.show_lights) return 0;
@@ -654,6 +676,7 @@ hemma_room:
         - z-index: 50
         - overflow: visible
         - pointer-events: auto
+        - touch-action: none
         - "--mdc-ripple-press-opacity": 0
         - "-webkit-tap-highlight-color": transparent
         - filter: none
@@ -993,6 +1016,8 @@ hemma_room:
             isolation: auto !important;
           }
           #mp1, #mp2, #mp3, #mp4,
+          #mp5, #mp6, #mp7, #mp8,
+          #mp9, #mp10,
           #plex, #plex_2,
           #activity1, #activity2 {
             overflow: hidden;
@@ -2032,8 +2057,8 @@ hemma_room:
       }
     }
 
-    @media (min-width: 768px) and (max-width: 1366px) and (min-height: 501px) and (pointer: coarse),
-           (min-width: 768px) and (max-width: 1366px) and (min-height: 501px) and (hover: none) {
+    @media (min-width: 768px) and (max-width: 1400px) and (min-height: 501px) and (pointer: coarse),
+           (min-width: 768px) and (max-width: 1400px) and (min-height: 501px) and (hover: none) {
       #time {
         display: var(--hemma-time-nav-open, block);
         top: calc(env(safe-area-inset-top, 0px) + var(--hemma-nav-top-current, 46px) - var(--hemma-time-nudge-tablet, 36px));

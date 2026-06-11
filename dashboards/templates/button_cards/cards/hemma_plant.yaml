@@ -104,7 +104,9 @@ hemma_plant:
         ]]]
       styles:
         card:
-          - background: var(--hemma-entity-background-active)
+          - "--hemma-active-overlay-opacity": "1"
+          - "--hemma-active-overlay-dur": "0s"
+          - --hemma-entity-top-gradient: none
           - box-shadow: var(--button-card-box-shadow-active, var(--button-card-box-shadow)) !important
           - --hemma-icon-color-current: '#34C759'
           - --hemma-icon-svg-url: "url('/local/hemma/icons/plant.svg')"
@@ -137,10 +139,10 @@ hemma_plant:
     }
     #img-cell::before { opacity: 0 !important; }
     #img-cell img {
-      width: 68% !important;
-      height: 68% !important;
-      max-width: 68% !important;
-      max-height: 68% !important;
+      width: 64% !important;
+      height: 64% !important;
+      max-width: 64% !important;
+      max-height: 64% !important;
       object-fit: contain !important;
       flex: none !important;
     }

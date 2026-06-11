@@ -1,4 +1,9 @@
-# /config/dashboards/templates/button_cards/hemma_entity_actions.yaml
+# /config/dashboards/templates/button_cards/cards/hemma_entity_actions.yaml
+#
+# A hemma_entity card with two configurable action buttons in a right-side column.
+# Originally contributed by @hostand.
+#
+# Usage:
 # - type: custom:button-card
 #   template: hemma_entity_actions
 #   entity: sensor.fridge_status
@@ -21,8 +26,6 @@ hemma_entity_actions:
   variables:
     icon: default
     svg_path: /local/hemma/icons
-
-    side_width: 62px
 
     action_1_enabled: true
     action_1_entity:
@@ -57,11 +60,17 @@ hemma_entity_actions:
 
   styles:
     card:
+      - --hemma-actions-rail-w: |
+          [[[
+            const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+            return isMobile ? '46px' : '56px';
+          ]]]
       - padding: >
           [[[
             const pad = 'var(--hemma-entity-inner-pad-current, var(--hemma-entity-inner-pad-desktop, 20px))';
-            const side = variables.side_width || '62px';
-            return `${pad} calc(${side} + ${pad}) ${pad} ${pad}`;
+            const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+            const rightInset = isMobile ? '14px' : '22px';
+            return `${pad} calc(var(--hemma-actions-rail-w, 62px) + ${rightInset}) ${pad} ${pad}`;
           ]]]
       - position: relative
       - overflow: hidden !important
@@ -69,12 +78,15 @@ hemma_entity_actions:
     custom_fields:
       side_actions:
         - position: absolute
-        - top: 0
-        - right: 0
-        - width: "[[[ return variables.side_width || '62px'; ]]]"
-        - height: 100%
-        - min-width: "[[[ return variables.side_width || '62px'; ]]]"
-        - min-height: 0
+        - top: calc(var(--hemma-entity-inner-pad-current, var(--hemma-entity-inner-pad-desktop, 20px)) - 2px)
+        - right: |
+            [[[
+              const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+              return isMobile ? '14px' : '22px';
+            ]]]
+        - bottom: calc(var(--hemma-entity-inner-pad-current, var(--hemma-entity-inner-pad-desktop, 20px)) - 2px)
+        - width: var(--hemma-actions-rail-w, 56px)
+        - min-width: var(--hemma-actions-rail-w, 56px)
         - z-index: 8
         - display: grid
         - grid-template-rows: 1fr 1fr
@@ -83,8 +95,12 @@ hemma_entity_actions:
         - margin: 0
         - overflow: hidden
         - pointer-events: auto
-        - border-left: 1px solid rgba(255, 255, 255, 0.06)
-        - background: transparent
+        - background: var(--hemma-entity-actions-rail-bg, rgba(255, 255, 255, 0.09))
+        - border-radius: |
+            [[[
+              const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
+              return isMobile ? '20px' : '24px';
+            ]]]
 
   custom_fields:
     side_actions: |
@@ -101,28 +117,12 @@ hemma_entity_actions:
           const st = String(states[eid]?.state || '').toLowerCase().replace(/_/g, ' ');
 
           const active = [
-            'on',
-            'open',
-            'opening',
-            'unlocked',
-            'unlocking',
-            'playing',
-            'buffering',
-            'home',
-            'connected',
-            'online',
-            'cooling',
-            'heating',
-            'cleaning',
-            'running',
-            'active'
+            'on', 'open', 'opening', 'unlocked', 'unlocking',
+            'playing', 'buffering', 'home', 'connected', 'online',
+            'cooling', 'heating', 'cleaning', 'running', 'active'
           ];
 
-          const bad = [
-            'unknown',
-            'unavailable',
-            'none'
-          ];
+          const bad = ['unknown', 'unavailable', 'none'];
 
           if (bad.includes(st)) return 'unavailable';
           if (active.includes(st)) return 'active';
@@ -191,9 +191,7 @@ hemma_entity_actions:
             this.dispatchEvent(new CustomEvent('hass-more-info', {
               bubbles: true,
               composed: true,
-              detail: {
-                entityId: eid
-              }
+              detail: { entityId: eid }
             }));
             return;
           }
@@ -230,8 +228,6 @@ hemma_entity_actions:
           }
         };
 
-        // Bind dos clicks nos botões laterais.
-        // Não usamos button-card aninhado aqui para evitar fundo/círculo herdado.
         setTimeout(() => {
           try {
             const root = this.shadowRoot;
@@ -244,7 +240,6 @@ hemma_entity_actions:
               el.addEventListener('click', (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
-
                 const idx = el.getAttribute('data-action-index');
                 runAction(idx);
               });
@@ -271,17 +266,10 @@ hemma_entity_actions:
           `;
         };
 
-        return `
-          ${btn(1)}
-          ${btn(2)}
-        `;
+        return `${btn(1)}${btn(2)}`;
       ]]]
 
   extra_styles: |
-    /* -------------------------------------------------------------------------
-       Side column layout
-       ------------------------------------------------------------------------- */
-
     #side_actions {
       overflow: hidden !important;
       pointer-events: auto !important;
@@ -292,6 +280,7 @@ hemma_entity_actions:
       height: 100%;
       min-width: 0;
       min-height: 0;
+      box-sizing: border-box;
 
       display: flex;
       align-items: center;
@@ -302,28 +291,19 @@ hemma_entity_actions:
 
       cursor: pointer;
       pointer-events: auto;
-
+      user-select: none;
       -webkit-tap-highlight-color: transparent;
 
-      /*
-        Fundo apenas da área lateral, não do ícone.
-        Igual ao conceito da imagem: a coluna tem área visual,
-        o ícone em si não tem bolinha/fundo.
-      */
       background: transparent;
       border-radius: 0;
       box-shadow: none;
-
       overflow: hidden;
+
+      transition: background-color 0.18s ease;
     }
 
     .hemma-side-action-1 {
-      background: rgba(255, 255, 255, 0.10);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .hemma-side-action-2 {
-      background: rgba(0, 0, 0, 0.14);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.10);
     }
 
     .hemma-side-action-button.disabled {
@@ -331,9 +311,7 @@ hemma_entity_actions:
       pointer-events: none;
     }
 
-    /* -------------------------------------------------------------------------
-       Side icons - SEM fundo/círculo
-       ------------------------------------------------------------------------- */
+    /* ── Icons ── */
 
     .hemma-side-action-icon {
       display: block;
@@ -347,11 +325,12 @@ hemma_entity_actions:
 
       color: var(--primary-text-color);
       opacity: 0.86;
+
+      transition: color 0.18s ease, opacity 0.18s ease;
     }
 
     .hemma-side-action-ha-icon {
       --mdc-icon-size: 23px;
-
       width: 23px;
       height: 23px;
       min-width: 23px;
@@ -367,7 +346,7 @@ hemma_entity_actions:
     }
 
     .hemma-side-action-icon.active {
-      color: var(--state-active-color, var(--accent-color));
+      color: var(--hemma-icon-color-current, var(--state-active-color, var(--accent-color)));
       opacity: 1;
     }
 
@@ -381,10 +360,7 @@ hemma_entity_actions:
       filter: grayscale(1);
     }
 
-    /*
-      Garante que ha-icon/img internos não recebam círculo/fundo herdado
-      de estilos globais do dashboard.
-    */
+    /* Strip any inherited background/border-radius from global styles */
     .hemma-side-action-button ha-icon,
     .hemma-side-action-button img,
     .hemma-side-action-button *,
@@ -396,24 +372,25 @@ hemma_entity_actions:
       box-shadow: none !important;
     }
 
+    /* ── Hover / active feedback (matches thermostat control buttons) ── */
+
     @media (hover: hover) and (pointer: fine) {
-      .hemma-side-action-button:hover .hemma-side-action-icon {
-        opacity: 1;
-        filter: brightness(1.2);
+      .hemma-side-action-button:hover {
+        background: rgba(255, 255, 255, 0.18);
       }
     }
 
     @media (hover: none) and (pointer: coarse) {
-      .hemma-side-action-button:active .hemma-side-action-icon {
-        opacity: 1;
-        filter: brightness(1.2);
+      .hemma-side-action-button:active {
+        background: rgba(255, 255, 255, 0.18);
       }
     }
+
+    /* ── Mobile sizing ── */
 
     @media (max-width: 767px), (max-height: 600px) {
       .hemma-side-action-ha-icon {
         --mdc-icon-size: 22px;
-
         width: 22px;
         height: 22px;
         min-width: 22px;

@@ -75,7 +75,7 @@ cards:
 
       card_mod:
         style: |
-          :host{ z-index: 2147483647 !important; }
+          :host{ position: relative; z-index: 2147483647 !important; }
           ha-card{
             --mdc-ripple-press-opacity: 0 !important;
             --mdc-ripple-hover-opacity: 0 !important;
@@ -87,6 +87,7 @@ cards:
             box-shadow: none !important;
             overflow: visible !important;
             padding: 0 !important;
+            touch-action: none !important;
           }
 
       styles: |
@@ -765,7 +766,7 @@ cards:
 
       card_mod:
         style: |
-          :host{ z-index: 2147483647 !important; }
+          :host{ position: relative; z-index: 2147483647 !important; }
           ha-card{
             --mdc-ripple-press-opacity: 0 !important;
             --mdc-ripple-hover-opacity: 0 !important;
@@ -777,6 +778,7 @@ cards:
             box-shadow: none !important;
             overflow: visible !important;
             padding: 0 !important;
+            touch-action: none !important;
           }
 
       styles: |
@@ -1268,7 +1270,7 @@ cards:
 
       card_mod:
         style: |
-          :host{ z-index: 2147483647 !important; }
+          :host{ position: relative; z-index: 2147483647 !important; }
           ha-card{
             --mdc-ripple-press-opacity: 0 !important;
             --mdc-ripple-hover-opacity: 0 !important;
@@ -1280,6 +1282,7 @@ cards:
             box-shadow: none !important;
             overflow: visible !important;
             padding: 0 !important;
+            touch-action: none !important;
           }
 
       styles: |

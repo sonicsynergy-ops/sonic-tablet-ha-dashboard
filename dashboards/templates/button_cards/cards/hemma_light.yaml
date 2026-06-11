@@ -2,7 +2,7 @@ hemma_light:
   template:
     - hemma_entity
 
-  show_icon: true
+  show_icon: false
   show_last_changed: false
 
   state_display: >

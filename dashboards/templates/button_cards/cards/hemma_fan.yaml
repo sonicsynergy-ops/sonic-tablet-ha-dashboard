@@ -71,15 +71,19 @@ hemma_fan:
       align-items: center !important;
       justify-content: center !important;
       overflow: hidden !important;
+      transform: translateZ(0) !important;
     }
     #img-cell::before { opacity: 0 !important; }
     #img-cell img {
+      flex: none !important;
       width: 68% !important;
       height: 68% !important;
       max-width: 68% !important;
       max-height: 68% !important;
       object-fit: contain !important;
-      flex: none !important;
+      transform-origin: 50% 50% !important;
+      animation: var(--hemma-fan-animation, none) !important;
+      animation-play-state: var(--hsr-anim-paused, running) !important;
     }
     #img-cell ha-icon {
       --mdc-icon-size: 26px !important;
@@ -101,10 +105,6 @@ hemma_fan:
     @keyframes hemma-fan-coast {
       from { transform: rotate(0deg); }
       to   { transform: rotate(360deg); }
-    }
-    #img-cell img {
-      transform-origin: center center !important;
-      animation: var(--hemma-fan-animation, none) !important;
     }
 
     @media (hover: hover) {

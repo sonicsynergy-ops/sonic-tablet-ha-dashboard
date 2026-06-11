@@ -154,7 +154,7 @@ hemma_media:
             const activeStates = ['on','open','opening','playing','cleaning','returning','cool','heat','washing','rinsing','spinning','drying','running','active','problem'];
             if (!activeStates.includes(s)) return 'var(--hemma-entity-name)';
             const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
-            if (s !== 'playing') return isMobile ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.97)';
+            if (s !== 'playing') return 'var(--hemma-entity-name-active)';
             const type = String(a.media_content_type || '').toLowerCase();
             const app = String(a.app_name || '').trim();
             const title = (a.media_title || a.title || '').trim();
@@ -174,7 +174,7 @@ hemma_media:
             const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
             const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
             if (hasArtwork) return 'rgba(255,255,255,0.95)';
-            return isMobile ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.95)';
+            return 'var(--hemma-entity-name-active)';
           ]]]
       - --hemma-media-state-color: |
           [[[
@@ -184,7 +184,7 @@ hemma_media:
             const activeStates = ['on','open','opening','playing','cleaning','returning','cool','heat','washing','rinsing','spinning','drying','running','active','problem'];
             if (!activeStates.includes(s)) return 'var(--hemma-entity-state)';
             const isMobile = window.matchMedia('(max-width: 767px), (max-height: 600px)').matches;
-            if (s !== 'playing') return isMobile ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.70)';
+            if (s !== 'playing') return 'var(--hemma-entity-state-active)';
             const type = String(a.media_content_type || '').toLowerCase();
             const app = String(a.app_name || '').trim();
             const title = (a.media_title || a.title || '').trim();
@@ -204,7 +204,7 @@ hemma_media:
             const fromRichApp = /youtube|plex|netflix|hulu|disney|max|prime|spotify|apple tv|apple music|paramount|peacock/i.test(app);
             const hasArtwork = !!pic && !looksLikeBareInput && (hasRichMeta || ['music','movie','video','tvshow'].includes(type) || fromRichApp);
             if (hasArtwork) return 'rgba(255,255,255,0.80)';
-            return isMobile ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.80)';
+            return 'var(--hemma-entity-state-active)';
           ]]]
       - --hemma-media-icon-bg: |
           [[[
@@ -276,6 +276,15 @@ hemma_media:
     style: |
       ha-card::after {
         opacity: var(--hemma-media-artwork-overlay) !important;
+        transition: opacity var(--hemma-active-overlay-dur, .40s) ease !important;
+      }
+      @media (hover: hover) {
+        :host(:hover) ha-card::after {
+          transition: opacity .18s ease !important;
+        }
+        :host(:hover) ha-card {
+          --hemma-active-overlay-opacity: var(--hemma-hover-overlay-opacity, 0.10);
+        }
       }
 
   extra_styles: |
