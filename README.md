@@ -139,7 +139,8 @@ Example layout:
             ├── navbar-popup-caret.js   # Add dropdown icon to navbar
             ├── navbar-scroll.js        # Collapsible phone navbar behavior
             ├── navbar-sidebar-offset.js# Navbar adjusts with sidebar visibility
-            └── swipe-card-patch.js     # Plex Recently Added carousel bullet color sync
+            ├── swipe-card-patch.js     # Plex Recently Added carousel bullet color sync
+            └── hemma-smart-row.js      # Smart entity row with active-card sorting
 ```
 
 ## :rocket: Installation
@@ -164,6 +165,7 @@ In Settings → Dashboards → Resources, add:
 - `/local/hemma/scripts/navbar-sidebar-offset.js` (from this repo)
 - `/local/hemma/scripts/navbar-scroll.js` (from this repo)
 - `/local/hemma/scripts/swipe-card-patch.js` (from this repo, required for Plex Recently Added popup)
+- `/local/hemma/scripts/hemma-smart-row.js` (from this repo, required for Smart Row)
 - `/local/hemma/fonts/hanken-grotesk.css` (from this repo)
 - `/hacsfiles/button-card/button-card.js` (should already be present if installed via HACS)
 - `/hacsfiles/lovelace-navbar-card/navbar-card.js` (should already be present if installed via HACS)
@@ -289,8 +291,8 @@ Media badges appear on the hero card and show what's currently playing. They aut
 | Variable | Description |
 |---|---|
 | `show_media` | `true` to enable media badges |
-| `show_media_player_1` – `show_media_player_4` | `true` to show each individual player badge |
-| `media_player_1` – `media_player_4` | Media player entity IDs |
+| `show_media_player_1` – `show_media_player_10` | `true` to show each individual player badge |
+| `media_player_1` – `media_player_10` | Media player entity IDs |
 | `pause_timeout_minutes` | Minutes before a paused player is considered inactive (default: `5`) |
 
 Example home view with all badge types enabled:
@@ -341,6 +343,86 @@ Example home view with all badge types enabled:
 ```
 
 Note: Media badges only appear when a player is active (playing, buffering, or recently paused within `pause_timeout_minutes`).
+
+---
+
+### :twisted_rightwards_arrows: Smart Row (`hemma-smart-row`)
+
+`hemma-smart-row` is a custom Lovelace card that replaces a static list of entity cards with a self-sorting row. On desktop, any card that becomes active automatically slides to the front of the row using a FLIP animation. On mobile portrait and landscape the cards render in a fixed grid — no reordering.
+
+**Requires:** `hemma-smart-row.js` registered as a Lovelace resource (included in this repo).
+
+#### Usage
+
+Replace a plain list of `button-card` entries with a single `hemma-smart-row` card and nest your cards inside:
+
+```yaml
+- type: custom:hemma-smart-row
+  cards:
+    - type: custom:button-card
+      template: hemma_light
+      entity: light.living_room
+      name: Living Room
+    - type: custom:button-card
+      template: hemma_thermostat
+      entity: climate.living_room
+      name: Thermostat
+    - type: custom:button-card
+      template: hemma_media
+      entity: media_player.apple_tv
+      name: Apple TV
+```
+
+#### Options
+
+| Variable | Default | Description |
+|---|---|---|
+| `cards` | required | Array of card configs (same format as any Lovelace card list) |
+| `sort` | `true` | Set to `false` to disable active-card sorting and render in config order |
+
+#### How sorting works
+
+- Active state is detected via `--hemma-active-overlay-opacity: 1` on each card's shadow DOM (works with all Hemma templates including plant thresholds and numeric conditions).
+- When a card becomes active it moves to the front of the row after a short 2.5 s delay — long enough to avoid flickering on transient states.
+- On page load, active cards are pre-sorted before the entry animation plays so the sweep order always matches the sorted order.
+- Respects `prefers-reduced-motion` — reorders instantly without animation when enabled.
+
+---
+
+### :zap: Entity Actions card (`hemma_entity_actions`)
+
+`hemma_entity_actions` extends `hemma_entity` with two configurable action buttons rendered in a vertical rail on the right side of the card. Each button can trigger a `more-info` panel, `toggle`, a `navigate` action, or a custom `call-service`.
+
+```yaml
+- type: custom:button-card
+  template: hemma_entity_actions
+  entity: sensor.fridge_status
+  name: Fridge
+  variables:
+    icon: fridge
+
+    action_1_entity: switch.fridge_mode
+    action_1_icon: mdi:fridge-outline
+    action_1_action: toggle
+
+    action_2_entity: switch.fridge_super_cool
+    action_2_icon: mdi:snowflake
+    action_2_action: toggle
+```
+
+#### Action variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `action_N_entity` | — | Entity to act on and read state from for icon colouring |
+| `action_N_icon` | `mdi:help-circle` | `mdi:*` icon, Hemma SVG name, or full path/URL |
+| `action_N_action` | `more-info` | `more-info` · `toggle` · `navigate` · `call-service` |
+| `action_N_navigation_path` | — | Path for `navigate` action |
+| `action_N_service` | — | `domain.service` for `call-service` action |
+| `action_N_service_data` | `{}` | Service data map for `call-service` action |
+| `action_N_enabled` | `true` | Set to `false` to hide this button |
+
+Replace `N` with `1` or `2`.
 
 ---
 
