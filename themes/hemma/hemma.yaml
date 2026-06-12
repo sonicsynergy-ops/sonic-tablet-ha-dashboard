@@ -23,10 +23,12 @@ Hemma:
 
       hemma-entity-background: rgba(0,0,0,0.25)
       hemma-entity-background-active: rgba(255,255,255,0.35)
+      hemma-entity-active-gradient: rgba(255,255,255,0.35)
       hemma-entity-background-mobile: rgba(0,0,0,0.3)
       hemma-entity-background-active-mobile: rgba(255,255,255,1)
-      hemma-entity-name: rgba(255,255,255,0.95)
-      hemma-entity-name-active: rgba(255,255,255,0.97)
+      hemma-entity-active-gradient-mobile: rgba(255,255,255,1.0)
+      hemma-entity-name: rgba(255,255,255,0.98)
+      hemma-entity-name-active: rgba(255,255,255,0.98)
       hemma-entity-name-active-mobile: rgba(0,0,0,0.88)
       hemma-entity-state: rgba(255,255,255,0.65)
       hemma-entity-state-opacity: 1
@@ -64,8 +66,8 @@ Hemma:
       hemma-popup-tile-text-primary: 'rgba(255,255,255,0.98)'
       hemma-popup-tile-text-secondary: 'rgba(255,255,255,0.75)'
       hemma-popup-tile-text-muted: 'rgba(255,255,255,0.52)'
-      hemma-popup-tile-background: rgba(200,200,200,0.18)
-      hemma-popup-tile-hover: rgba(220,220,220,0.18)
+      hemma-popup-tile-background: rgba(200,200,200,0.12)
+      hemma-popup-tile-hover: rgba(220,220,220,0.13)
       hemma-popup-progress-track: rgba(255,255,255,0.14)
 
       hemma-card-specular-start: transparent
@@ -78,6 +80,7 @@ Hemma:
       thermostat-card-on: var(--hemma-control-on)
 
       hemma-toggle-active-opacity: 0.88
+      hemma-toggle-track-fill: rgba(0,0,0,0.75)
       hero-img-brightness-mobile: 0.97
       hemma-nav-img-filter: invert(1)
 
@@ -86,7 +89,7 @@ Hemma:
       # ============================================================================
 
       ha-card-box-shadow: var(--ha-card-box-shadow-light)
-      dialog-box-shadow: "0 20px 60px rgba(0,0,0,0.30), 0 6px 16px rgba(0,0,0,0.15)"
+      dialog-box-shadow: transparent
       mdc-dialog-scrim-color: rgba(0,0,0,0.4)
       button-card-box-shadow: none
       button-card-box-shadow-mobile: none
@@ -95,7 +98,6 @@ Hemma:
       button-card-box-shadow-hover: none
       button-card-box-shadow-hover-mobile: none
 
-      ha-color-border-neutral-normal: transparent
       ha-color-fill-primary-normal-resting: var(--hemma-nav-bg)
       ha-color-fill-primary-quiet-resting: rgba(100,100,100,0.25)
       ha-color-fill-primary-quiet-hover: rgba(100,100,100,0.3)
@@ -112,7 +114,7 @@ Hemma:
       mdc-theme-surface: var(--ha-card-background)
       md-list-container-color: var(--ha-card-background)
       dialog-background-color: var(--ha-card-background)
-      hemma-dialog-bg: rgba(100,100,105,0.3)
+      hemma-dialog-bg: rgba(0,0,5,0.3)
       ha-dialog-background: var(--hemma-dialog-bg)
       ha-dialog-surface-background: var(--hemma-dialog-bg)
 
@@ -142,10 +144,12 @@ Hemma:
       # MODE: DARK — ENTITY TOKENS
       # ============================================================================
 
-      hemma-entity-background: rgba(0,0,0,0.2)
+      hemma-entity-background: rgba(0,0,0,0.3)
       hemma-entity-background-active: rgba(255,255,255,0.30)
+      hemma-entity-active-gradient: rgba(255,255,255,0.30)
       hemma-entity-background-mobile: rgba(0,0,0,0.35)
       hemma-entity-background-active-mobile: rgba(255,255,255,.70)
+      hemma-entity-active-gradient-mobile: rgba(255,255,255,0.70)
       hemma-entity-name: rgba(255,255,255,0.95)
       hemma-entity-name-active: rgba(255,255,255,0.97)
       hemma-entity-name-active-mobile: rgba(0,0,0,0.88)
@@ -154,7 +158,7 @@ Hemma:
       hemma-entity-state-active: rgba(255,255,255,0.80)
       hemma-entity-state-active-mobile: rgba(0,0,0,0.55)
       hemma-entity-state-active-color: rgba(255,255,255,0.80)
-      hemma-entity-state-active-color-mobile: rgba(0,0,0,0.55)
+      hemma-entity-state-active-color-mobile: rgba(27 15 15 / 0.55)
 
       # ============================================================================
       # MODE: DARK — NAV / POPUP / CONTROL TOKENS
@@ -185,7 +189,7 @@ Hemma:
       hemma-popup-tile-text-secondary: 'rgba(255,255,255,0.75)'
       hemma-popup-tile-text-muted: 'rgba(255,255,255,0.52)'
       hemma-popup-tile-background: rgba(255,255,255,0.07)
-      hemma-popup-tile-hover: rgba(255,255,255,0.09)
+      hemma-popup-tile-hover: rgba(255,255,255,0.12)
       hemma-popup-progress-track: rgba(255,255,255,0.09)
 
       hemma-card-specular-start: transparent
@@ -199,6 +203,7 @@ Hemma:
 
       hemma-toggle-inactive-opacity: 0.55
       hemma-toggle-active-opacity: 0.88
+      hemma-toggle-track-fill: rgba(0,0,0,0.75)
 
       # ============================================================================
       # MODE: DARK — COMPONENT / SYSTEM TOKENS
@@ -214,11 +219,10 @@ Hemma:
       button-card-box-shadow-hover: none
       button-card-box-shadow-hover-mobile: none
 
-      hemma-dialog-bg: rgba(0,0,0,0.20)
+      hemma-dialog-bg: rgba(0,0,0,0.6)
       ha-dialog-background: var(--hemma-dialog-bg)
       ha-dialog-surface-background: var(--hemma-dialog-bg)
 
-      ha-color-border-neutral-normal: transparent
       ha-color-fill-primary-normal-resting: var(--hemma-nav-bg)
       ha-color-fill-primary-quiet-resting: rgba(100,100,100,0.25)
       ha-color-fill-primary-quiet-hover: rgba(100,100,100,0.3)
@@ -320,7 +324,6 @@ Hemma:
   border-end-end-radius: 30px
   wa-border-radius-m: 24px
   wa-border-radius-s: 30px
-  wa-border-style: none
   wa-shadow-m: var(--ha-card-box-shadow)
 
   mdc-button-outline-color: rgba(255,255,255,0.15)
@@ -419,7 +422,7 @@ Hemma:
 
   # Header top
   header-top-desktop: clamp(300px, 36vh, 400px)
-  header-top-tablet: clamp(140px, 30vh, 320px)
+  header-top-tablet: clamp(180px, 38vh, 370px)
   header-top-tablet-portrait: clamp(260px, 28vh, 400px)
   header-top-mobile: clamp(30px, 16vh, 70px)
   header-top-mobile-nudge: -10px
@@ -503,7 +506,8 @@ Hemma:
   hemma-entity-picture-inactive-opacity: 0.95
   hemma-entity-picture-active-opacity: 1
   hemma-entity-picture-inactive-filter: brightness(0.9) saturate(0.8)
-  hemma-entity-picture-active-filter: none
+
+  hemma-hover-overlay-opacity: 0.06
   hemma-entity-text-shadow: none
   hemma-entity-header-buffer: 220px
   hemma-entity-height-desktop: 200px
@@ -946,7 +950,7 @@ Hemma:
 
       ha-app-layout {
         --hemma-card-hover-shadow: var(--hemma-button-card-box-shadow-hover-current, var(--button-card-box-shadow-hover, var(--ha-shadow-light-hover)));
-        --hemma-card-hover-filter: var(--hemma-hover-filter, brightness(1.10));
+        --hemma-card-hover-filter: var(--hemma-hover-filter, brightness(1.01));
       }
 
       layout-card$ #container{
@@ -1022,7 +1026,7 @@ Hemma:
       }
 
       /* Tablet */
-      @media (min-width: 768px) and (max-width: 1366px) and (min-height: 501px) and (hover: none) and (pointer: coarse) {
+      @media (min-width: 768px) and (max-width: 1400px) and (min-height: 501px) and (hover: none) and (pointer: coarse) {
         html,
         :host,
         ha-app-layout {
@@ -1066,7 +1070,7 @@ Hemma:
       }
 
       /* Tablet Portrait */
-      @media (min-width: 768px) and (max-width: 1366px) and (orientation: portrait) and (min-height: 501px) and (hover: none) and (pointer: coarse) {
+      @media (min-width: 768px) and (max-width: 1400px) and (orientation: portrait) and (min-height: 501px) and (hover: none) and (pointer: coarse) {
         html,
         :host,
         ha-app-layout {
@@ -1336,12 +1340,10 @@ Hemma:
       }
 
     ha-drawer: |
-      :host {
-        backdrop-filter: blur(20px) saturate(1.2) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-      }
-      .drawer {
+      .sidebar-shell {
         background-color: var(--sidebar-background-color) !important;
+        backdrop-filter: blur(20px) saturate(1.2);
+        -webkit-backdrop-filter: blur(20px) saturate(1.2);
         border-right: none !important;
         box-shadow: none !important;
       }
@@ -1385,26 +1387,34 @@ Hemma:
       }
 
       ha-md-list-item,
-      ha-md-list-item.selected::before {
+      ha-md-list-item.selected::before,
+      ha-list-item-button,
+      ha-list-item-button.selected::before {
         border-radius: var(--ha-card-border-radius) !important;
+        --ha-list-item-focus-radius: var(--ha-card-border-radius) !important;
       }
 
       @media (hover: none) {
-        ha-md-list-item {
+        ha-md-list-item,
+        ha-list-item-button {
           --md-list-item-hover-state-layer-opacity: 0 !important;
           --ha-ripple-hover-opacity: 0 !important;
         }
       }
 
   card-mod-drawer: |
-    :host {
-      backdrop-filter: blur(20px) saturate(1.2) !important;
-      -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-    }
-    .drawer {
+    .mdc-drawer, .sidebar-shell {
       background-color: var(--sidebar-background-color) !important;
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
       border-right: none !important;
       box-shadow: none !important;
+    }
+
+  card-mod-sidebar: |
+    :host {
+      background: none !important;
+      backdrop-filter: var(--ha-card-backdrop-filter);
     }
 
   card-mod-view-yaml: |
@@ -1443,13 +1453,13 @@ Hemma:
       }
       :host(:not(.hemma-room)) ha-card:not(.type-custom-navbar-card):hover,
       :host(:not(.hemma-room)) ha-card:not(.type-custom-navbar-card):focus-within {
-        filter: var(--hemma-card-hover-filter, brightness(1.04)) !important;
+        filter: var(--hemma-card-hover-filter, brightness(1.01)) !important;
       }
     }
 
     @media (hover:none) {
       :host(:not(.hemma-room)) ha-card:not(.type-custom-navbar-card):active {
-        filter: var(--hemma-card-hover-filter, brightness(1.04)) !important;
+        filter: var(--hemma-card-hover-filter, brightness(1.01)) !important;
         box-shadow: var(--hemma-card-hover-shadow, var(--button-card-box-shadow-hover, var(--ha-shadow-light-hover))) !important;
       }
     }
@@ -1500,12 +1510,10 @@ Hemma:
   uix-theme: "Hemma"
 
   uix-drawer: |
-    :host {
-      backdrop-filter: blur(20px) saturate(1.2) !important;
-      -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
-    }
-    .drawer {
+    .mdc-drawer, .sidebar-shell {
       background-color: var(--sidebar-background-color) !important;
+      backdrop-filter: blur(20px) saturate(1.2);
+      -webkit-backdrop-filter: blur(20px) saturate(1.2);
       border-right: none !important;
       box-shadow: none !important;
     }
