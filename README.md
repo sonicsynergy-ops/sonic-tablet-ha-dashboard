@@ -59,23 +59,22 @@ Install via HACS (recommended) unless noted:
 <img width="615" height="618" alt="Screenshot 2026-05-14 at 2 24 40 PM" src="https://github.com/user-attachments/assets/f7f82bb8-1794-4ff7-b783-df06c4d2c56e" />
 
 #### Network (Dark Mode)
-<img width="615" height="698" alt="Screenshot 2026-06-05 at 3 31 21 PM" src="https://github.com/user-attachments/assets/0d2ff95e-acab-4b43-9ca7-cf1ccac3f1a7" />
-
+<img width="615" height="708" alt="popup-network" src="https://github.com/user-attachments/assets/65d088fc-7834-4734-8fca-5ef20f843260" />
 
 #### Energy Usage
-<img width="615" height="510" alt="Screenshot 2026-05-14 at 2 25 01 PM" src="https://github.com/user-attachments/assets/03679456-4ebc-4952-b358-6a9822fa47a7" />
+<img width="615" height="520" alt="popup-energy" src="https://github.com/user-attachments/assets/8e989b83-cfa0-4e14-923b-b82ea7549ebc" />
 
 #### Battery Monitor (Dark Mode)
-<img width="615" height="580" alt="image" src="https://github.com/user-attachments/assets/f93daf66-8bd3-4e4f-846f-39b617a5959d" />
+<img width="615" height="605" alt="popup-battery" src="https://github.com/user-attachments/assets/6c01d11a-c5a9-480c-95dd-d51027f0cbd0" />
 
 #### Plant Monitor
-<img width="615" height="621" alt="Screenshot 2026-05-14 at 2 26 07 PM" src="https://github.com/user-attachments/assets/75f5a105-b99d-4a90-9e29-7e3cf841dbcf" />
+<img width="615" height="629" alt="popup-plant" src="https://github.com/user-attachments/assets/528e90a4-c25f-49c5-9a7d-43d52ed5efeb" />
 
 #### System Updates
 <img width="615" height="286" alt="Screenshot 2026-05-14 at 2 25 04 PM" src="https://github.com/user-attachments/assets/ca0d647a-6e5b-4fc7-881b-c05537c001f5" />
 
 #### Plex Recently Added
-<img width="615" height="440" alt="Screenshot 2026-06-05 at 3 29 03 PM" src="https://github.com/user-attachments/assets/e373f3c7-fffe-449a-b22f-03b214a6b992" />
+<img width="615" height="450" alt="popup-recently-added" src="https://github.com/user-attachments/assets/2bfc20e5-72ff-49a1-8c2b-cd0d5c267c59" />
 
 ---
 
