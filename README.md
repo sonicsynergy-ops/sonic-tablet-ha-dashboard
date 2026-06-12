@@ -58,13 +58,13 @@ Install via HACS (recommended) unless noted:
 #### Air Quality
 <img width="615" height="618" alt="Screenshot 2026-05-14 at 2 24 40 PM" src="https://github.com/user-attachments/assets/f7f82bb8-1794-4ff7-b783-df06c4d2c56e" />
 
-#### Network (Dark Mode)
+#### Network
 <img width="615" height="708" alt="popup-network" src="https://github.com/user-attachments/assets/65d088fc-7834-4734-8fca-5ef20f843260" />
 
 #### Energy Usage
 <img width="615" height="520" alt="popup-energy" src="https://github.com/user-attachments/assets/8e989b83-cfa0-4e14-923b-b82ea7549ebc" />
 
-#### Battery Monitor (Dark Mode)
+#### Battery Monitor
 <img width="615" height="605" alt="popup-battery" src="https://github.com/user-attachments/assets/6c01d11a-c5a9-480c-95dd-d51027f0cbd0" />
 
 #### Plant Monitor
