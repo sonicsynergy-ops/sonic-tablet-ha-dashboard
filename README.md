@@ -74,7 +74,7 @@ Install via HACS (recommended) unless noted:
 <img width="615" height="286" alt="Screenshot 2026-05-14 at 2 25 04 PM" src="https://github.com/user-attachments/assets/ca0d647a-6e5b-4fc7-881b-c05537c001f5" />
 
 #### Plex Recently Added
-<img width="615" height="450" alt="popup-recently-added" src="https://github.com/user-attachments/assets/2bfc20e5-72ff-49a1-8c2b-cd0d5c267c59" />
+<img width="615" height="452" alt="popup-recently-added" src="https://github.com/user-attachments/assets/f06bd93f-6e8e-46b0-a79c-21a9537dea1c" />
 
 ---
 
