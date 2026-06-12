@@ -144,7 +144,7 @@ Hemma:
       # MODE: DARK — ENTITY TOKENS
       # ============================================================================
 
-      hemma-entity-background: rgba(0,0,0,0.3)
+      hemma-entity-background: rgba(0,0,0,0.4)
       hemma-entity-background-active: rgba(255,255,255,0.30)
       hemma-entity-active-gradient: rgba(255,255,255,0.30)
       hemma-entity-background-mobile: rgba(0,0,0,0.35)
@@ -189,7 +189,7 @@ Hemma:
       hemma-popup-tile-text-secondary: 'rgba(255,255,255,0.75)'
       hemma-popup-tile-text-muted: 'rgba(255,255,255,0.52)'
       hemma-popup-tile-background: rgba(255,255,255,0.07)
-      hemma-popup-tile-hover: rgba(255,255,255,0.12)
+      hemma-popup-tile-hover: rgba(255,255,255,0.09)
       hemma-popup-progress-track: rgba(255,255,255,0.09)
 
       hemma-card-specular-start: transparent
@@ -408,8 +408,8 @@ Hemma:
   # BROWSER MOD POPUPS
   # ============================================================================
 
-  hemma-popup-tile-hover-scale: '1.01'
-  hemma-popup-tile-hover-duration: '0.2s'
+  hemma-popup-tile-hover-scale: '1.008'
+  hemma-popup-tile-hover-duration: '0.15s'
 
   # ============================================================================
   # HERO / HEADER LAYOUT
@@ -1373,9 +1373,7 @@ Hemma:
   card-mod-sidebar-yaml: |
     .: |
       :host {
-        background: var(--sidebar-background-color) !important;
-        backdrop-filter: blur(20px) saturate(1.2) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+        background: none !important;
         box-shadow: none !important;
         border: 0 !important;
         outline: none !important;
@@ -1402,14 +1400,18 @@ Hemma:
         }
       }
 
-  card-mod-drawer: |
-    .mdc-drawer, .sidebar-shell {
-      background-color: var(--sidebar-background-color) !important;
-      backdrop-filter: blur(20px) saturate(1.2);
-      -webkit-backdrop-filter: blur(20px) saturate(1.2);
-      border-right: none !important;
-      box-shadow: none !important;
-    }
+  card-mod-drawer-yaml: |
+    .: |
+      .mdc-drawer, .sidebar-shell {
+        background-color: var(--sidebar-background-color) !important;
+        border-inline-end: none !important;
+        box-shadow: none !important;
+      }
+    wa-drawer$: |
+      dialog {
+        backdrop-filter: blur(20px) saturate(1.2) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+      }
 
   card-mod-sidebar: |
     :host {

@@ -1421,9 +1421,7 @@ Hemma Glass:
   card-mod-sidebar-yaml: |
     .: |
       :host {
-        background: var(--sidebar-background-color) !important;
-        backdrop-filter: blur(20px) saturate(1.2) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+        background: none !important;
         box-shadow: none !important;
         border: 0 !important;
         outline: none !important;
@@ -1450,14 +1448,18 @@ Hemma Glass:
         }
       }
 
-  card-mod-drawer: |
-    .mdc-drawer, .sidebar-shell {
-      background-color: var(--sidebar-background-color) !important;
-      backdrop-filter: blur(20px) saturate(1.2);
-      -webkit-backdrop-filter: blur(20px) saturate(1.2);
-      border-right: none !important;
-      box-shadow: none !important;
-    }
+  card-mod-drawer-yaml: |
+    .: |
+      .mdc-drawer, .sidebar-shell {
+        background-color: var(--sidebar-background-color) !important;
+        border-inline-end: none !important;
+        box-shadow: none !important;
+      }
+    wa-drawer$: |
+      dialog {
+        backdrop-filter: blur(20px) saturate(1.2) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+      }
 
   card-mod-sidebar: |
     :host {
