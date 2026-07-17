@@ -1,0 +1,179 @@
+{
+  "contractVersion": "1.0.0",
+  "fixtureId": "studio-state.recording",
+  "generatedAt": "2026-07-17T01:14:00Z",
+  "origin": "MOCK",
+  "freshness": { "stale": false, "ageSeconds": 0, "expiresAfterSeconds": 30 },
+  "studio": {
+    "id": "sonic-synergy-studio",
+    "name": "Sonic Synergy Studio",
+    "timezone": "America/Mexico_City"
+  },
+  "mode": {
+    "value": "RECORDING",
+    "label": "Recording",
+    "changedAt": "2026-07-17T01:00:00Z",
+    "changedBy": "OPERATOR",
+    "pending": false
+  },
+  "broadcast": {
+    "status": "LIVE",
+    "label": "Live",
+    "health": "NOMINAL",
+    "detail": "Primary program feed is live",
+    "startedAt": "2026-07-17T01:02:00Z",
+    "elapsedSeconds": 720,
+    "destinations": [
+      {
+        "id": "primary-stream",
+        "label": "Primary Stream",
+        "status": "CONNECTED",
+        "audience": 148
+      },
+      {
+        "id": "archive-feed",
+        "label": "Archive Feed",
+        "status": "CONNECTED",
+        "audience": null
+      }
+    ],
+    "updatedAt": "2026-07-17T01:14:00Z"
+  },
+  "activity": [
+    {
+      "id": "activity-session-recording",
+      "zoneId": "live-room",
+      "kind": "RECORDING",
+      "status": "ACTIVE",
+      "title": "Session recording",
+      "detail": "Take 4 in progress",
+      "startedAt": "2026-07-17T01:05:00Z",
+      "updatedAt": "2026-07-17T01:14:00Z"
+    },
+    {
+      "id": "activity-program-live",
+      "zoneId": "control-room",
+      "kind": "BROADCAST",
+      "status": "ACTIVE",
+      "title": "Program feed live",
+      "detail": "Primary and archive destinations connected",
+      "startedAt": "2026-07-17T01:02:00Z",
+      "updatedAt": "2026-07-17T01:14:00Z"
+    },
+    {
+      "id": "activity-booth-occupied",
+      "zoneId": "vocal-booth",
+      "kind": "OCCUPANCY",
+      "status": "ACTIVE",
+      "title": "Vocalist in booth",
+      "detail": "Talkback available",
+      "startedAt": "2026-07-17T01:04:00Z",
+      "updatedAt": "2026-07-17T01:14:00Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": "control-room",
+      "name": "Control Room",
+      "shortName": "Control",
+      "kind": "CONTROL_ROOM",
+      "status": "ACTIVE",
+      "summary": "Program live; recording monitored",
+      "occupancy": { "status": "OCCUPIED", "count": 2, "updatedAt": "2026-07-17T01:14:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "MONITORING", "CLIMATE"],
+      "metrics": [
+        { "id": "program-level", "label": "Program", "value": -12.6, "unit": "dBFS", "status": "ACTIVE", "updatedAt": "2026-07-17T01:14:00Z" },
+        { "id": "temperature", "label": "Temperature", "value": 22.8, "unit": "°C", "status": "NORMAL", "updatedAt": "2026-07-17T01:14:00Z" }
+      ],
+      "activeActivityIds": ["activity-program-live"],
+      "updatedAt": "2026-07-17T01:14:00Z"
+    },
+    {
+      "id": "live-room",
+      "name": "Live Room",
+      "shortName": "Live",
+      "kind": "LIVE_ROOM",
+      "status": "ACTIVE",
+      "summary": "Take 4 recording",
+      "occupancy": { "status": "OCCUPIED", "count": 3, "updatedAt": "2026-07-17T01:14:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING", "CLIMATE"],
+      "metrics": [
+        { "id": "recording", "label": "Recorder", "value": "Rolling", "unit": null, "status": "ACTIVE", "updatedAt": "2026-07-17T01:14:00Z" }
+      ],
+      "activeActivityIds": ["activity-session-recording"],
+      "updatedAt": "2026-07-17T01:14:00Z"
+    },
+    {
+      "id": "vocal-booth",
+      "name": "Vocal Booth",
+      "shortName": "Booth",
+      "kind": "VOCAL_BOOTH",
+      "status": "ACTIVE",
+      "summary": "Occupied; talkback available",
+      "occupancy": { "status": "OCCUPIED", "count": 1, "updatedAt": "2026-07-17T01:14:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING"],
+      "metrics": [
+        { "id": "mic-chain", "label": "Mic Chain", "value": "Active", "unit": null, "status": "ACTIVE", "updatedAt": "2026-07-17T01:14:00Z" }
+      ],
+      "activeActivityIds": ["activity-booth-occupied"],
+      "updatedAt": "2026-07-17T01:14:00Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-session-live",
+      "severity": "INFO",
+      "status": "ACTIVE",
+      "title": "Recording and broadcast active",
+      "message": "Avoid disruptive studio actions until the session ends.",
+      "scope": { "kind": "STUDIO", "id": null },
+      "acknowledgeable": false,
+      "createdAt": "2026-07-17T01:02:00Z",
+      "updatedAt": "2026-07-17T01:14:00Z",
+      "acknowledgedAt": null
+    }
+  ],
+  "quickActions": [
+    {
+      "id": "action-stop-broadcast",
+      "actionId": "broadcast.stop",
+      "label": "End Broadcast",
+      "description": "End the active broadcast workflow",
+      "target": { "kind": "BROADCAST" },
+      "availability": "AVAILABLE",
+      "presentation": "DANGER",
+      "confirmation": { "required": true, "prompt": "End the live broadcast?" }
+    },
+    {
+      "id": "action-switch-mixing",
+      "actionId": "studio.mode.mixing",
+      "label": "Move to Mixing",
+      "description": "End recording mode and prepare for mix review",
+      "target": { "kind": "STUDIO" },
+      "availability": "AVAILABLE",
+      "presentation": "PRIMARY",
+      "confirmation": { "required": true, "prompt": "Move the studio to mixing mode?" }
+    },
+    {
+      "id": "action-control-mute",
+      "actionId": "zone.audio.mute-toggle",
+      "label": "Mute Control Room",
+      "description": "Toggle control-room monitor mute",
+      "target": { "kind": "ZONE", "zoneId": "control-room" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": false, "prompt": null }
+    }
+  ],
+  "systemHealth": {
+    "overall": "HEALTHY",
+    "provider": { "id": "mock", "label": "Local Mock Provider", "connection": "CONNECTED", "lastSyncAt": "2026-07-17T01:14:00Z", "latencyMs": 0, "message": null },
+    "tablet": { "batteryPercent": 76, "charging": true, "network": "ONLINE", "kioskMode": true },
+    "application": { "version": "0.0.0-contract", "build": "fixture-recording", "contractVersion": "1.0.0" },
+    "components": [
+      { "id": "state-feed", "label": "State Feed", "status": "HEALTHY", "message": null, "checkedAt": "2026-07-17T01:14:00Z" },
+      { "id": "broadcast-monitor", "label": "Broadcast Monitor", "status": "HEALTHY", "message": "All configured destinations connected", "checkedAt": "2026-07-17T01:14:00Z" }
+    ],
+    "checkedAt": "2026-07-17T01:14:00Z"
+  }
+}

@@ -1,0 +1,98 @@
+schema_version: 1
+contract_version: "1.0.0"
+
+studio:
+  id: sonic-synergy-studio
+  name: Sonic Synergy Studio
+  timezone: America/Mexico_City
+  default_mode: READY
+
+floorplan:
+  asset: assets/floorplan/studio-overview.svg
+  width: 1000
+  height: 700
+
+zones:
+  - id: control-room
+    name: Control Room
+    short_name: Control
+    kind: CONTROL_ROOM
+    capabilities:
+      - OCCUPANCY
+      - LIGHTING
+      - AUDIO
+      - MONITORING
+      - CLIMATE
+    floorplan:
+      x: 80
+      y: 80
+      width: 390
+      height: 250
+
+  - id: live-room
+    name: Live Room
+    short_name: Live
+    kind: LIVE_ROOM
+    capabilities:
+      - OCCUPANCY
+      - LIGHTING
+      - AUDIO
+      - RECORDING
+      - CLIMATE
+    floorplan:
+      x: 500
+      y: 80
+      width: 420
+      height: 390
+
+  - id: vocal-booth
+    name: Vocal Booth
+    short_name: Booth
+    kind: VOCAL_BOOTH
+    capabilities:
+      - OCCUPANCY
+      - LIGHTING
+      - AUDIO
+      - RECORDING
+    floorplan:
+      x: 80
+      y: 360
+      width: 260
+      height: 210
+
+quick_actions:
+  - id: action-start-recording
+    action_id: studio.mode.recording
+    label: Start Recording
+    description: Move the studio into recording mode
+    target:
+      kind: STUDIO
+    confirmation:
+      required: true
+      prompt: Start recording mode?
+
+  - id: action-go-live
+    action_id: broadcast.start
+    label: Go Live
+    description: Start the configured broadcast workflow
+    target:
+      kind: BROADCAST
+    confirmation:
+      required: true
+      prompt: Start the broadcast?
+
+  - id: action-live-room-lights
+    action_id: zone.lights.toggle
+    label: Live Room Lights
+    description: Toggle the live room lighting group
+    target:
+      kind: ZONE
+      zone_id: live-room
+    confirmation:
+      required: false
+
+admin:
+  hidden_from_navigation: true
+  entry_gesture: LONG_PRESS
+  show_provider_health: true
+  show_mapping_health: true

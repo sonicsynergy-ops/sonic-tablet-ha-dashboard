@@ -1,0 +1,154 @@
+{
+  "contractVersion": "1.0.0",
+  "fixtureId": "studio-state.mixing",
+  "generatedAt": "2026-07-17T03:20:00Z",
+  "origin": "MOCK",
+  "freshness": { "stale": false, "ageSeconds": 0, "expiresAfterSeconds": 30 },
+  "studio": { "id": "sonic-synergy-studio", "name": "Sonic Synergy Studio", "timezone": "America/Mexico_City" },
+  "mode": {
+    "value": "MIXING",
+    "label": "Mixing",
+    "changedAt": "2026-07-17T02:45:00Z",
+    "changedBy": "OPERATOR",
+    "pending": false
+  },
+  "broadcast": {
+    "status": "OFF_AIR",
+    "label": "Off Air",
+    "health": "NOMINAL",
+    "detail": "No active broadcast",
+    "startedAt": null,
+    "elapsedSeconds": null,
+    "destinations": [
+      { "id": "primary-stream", "label": "Primary Stream", "status": "DISCONNECTED", "audience": null }
+    ],
+    "updatedAt": "2026-07-17T03:20:00Z"
+  },
+  "activity": [
+    {
+      "id": "activity-mix-review",
+      "zoneId": "control-room",
+      "kind": "AUDIO",
+      "status": "ACTIVE",
+      "title": "Mix review",
+      "detail": "Revision 3 playback in progress",
+      "startedAt": "2026-07-17T03:05:00Z",
+      "updatedAt": "2026-07-17T03:20:00Z"
+    },
+    {
+      "id": "activity-live-room-clear",
+      "zoneId": "live-room",
+      "kind": "OCCUPANCY",
+      "status": "IDLE",
+      "title": "Live room clear",
+      "detail": null,
+      "startedAt": null,
+      "updatedAt": "2026-07-17T03:20:00Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": "control-room",
+      "name": "Control Room",
+      "shortName": "Control",
+      "kind": "CONTROL_ROOM",
+      "status": "ACTIVE",
+      "summary": "Mix review in progress",
+      "occupancy": { "status": "OCCUPIED", "count": 2, "updatedAt": "2026-07-17T03:20:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "MONITORING", "CLIMATE"],
+      "metrics": [
+        { "id": "monitoring", "label": "Monitoring", "value": "Mix Bus", "unit": null, "status": "ACTIVE", "updatedAt": "2026-07-17T03:20:00Z" },
+        { "id": "level", "label": "Playback Peak", "value": -8.4, "unit": "dBFS", "status": "ACTIVE", "updatedAt": "2026-07-17T03:20:00Z" }
+      ],
+      "activeActivityIds": ["activity-mix-review"],
+      "updatedAt": "2026-07-17T03:20:00Z"
+    },
+    {
+      "id": "live-room",
+      "name": "Live Room",
+      "shortName": "Live",
+      "kind": "LIVE_ROOM",
+      "status": "AVAILABLE",
+      "summary": "Clear and available",
+      "occupancy": { "status": "CLEAR", "count": 0, "updatedAt": "2026-07-17T03:20:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING", "CLIMATE"],
+      "metrics": [
+        { "id": "audio-signal", "label": "Audio Signal", "value": "Idle", "unit": null, "status": "NORMAL", "updatedAt": "2026-07-17T03:20:00Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T03:20:00Z"
+    },
+    {
+      "id": "vocal-booth",
+      "name": "Vocal Booth",
+      "shortName": "Booth",
+      "kind": "VOCAL_BOOTH",
+      "status": "AVAILABLE",
+      "summary": "Available",
+      "occupancy": { "status": "CLEAR", "count": 0, "updatedAt": "2026-07-17T03:20:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING"],
+      "metrics": [
+        { "id": "mic-chain", "label": "Mic Chain", "value": "Standby", "unit": null, "status": "NORMAL", "updatedAt": "2026-07-17T03:20:00Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T03:20:00Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-monitor-level",
+      "severity": "WARNING",
+      "status": "ACTIVE",
+      "title": "Monitor level elevated",
+      "message": "Control-room playback is above the preferred review level.",
+      "scope": { "kind": "ZONE", "id": "control-room" },
+      "acknowledgeable": true,
+      "createdAt": "2026-07-17T03:18:00Z",
+      "updatedAt": "2026-07-17T03:20:00Z",
+      "acknowledgedAt": null
+    }
+  ],
+  "quickActions": [
+    {
+      "id": "action-ready",
+      "actionId": "studio.mode.ready",
+      "label": "Mark Ready",
+      "description": "Return the studio to ready mode",
+      "target": { "kind": "STUDIO" },
+      "availability": "AVAILABLE",
+      "presentation": "PRIMARY",
+      "confirmation": { "required": false, "prompt": null }
+    },
+    {
+      "id": "action-recording",
+      "actionId": "studio.mode.recording",
+      "label": "Return to Recording",
+      "description": "Prepare the studio for another take",
+      "target": { "kind": "STUDIO" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": true, "prompt": "Return to recording mode?" }
+    },
+    {
+      "id": "action-ack-monitor",
+      "actionId": "alert.acknowledge",
+      "label": "Acknowledge Level",
+      "description": "Acknowledge the current monitor-level warning",
+      "target": { "kind": "ALERT", "alertId": "alert-monitor-level" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": false, "prompt": null }
+    }
+  ],
+  "systemHealth": {
+    "overall": "HEALTHY",
+    "provider": { "id": "mock", "label": "Local Mock Provider", "connection": "CONNECTED", "lastSyncAt": "2026-07-17T03:20:00Z", "latencyMs": 0, "message": null },
+    "tablet": { "batteryPercent": 69, "charging": false, "network": "ONLINE", "kioskMode": true },
+    "application": { "version": "0.0.0-contract", "build": "fixture-mixing", "contractVersion": "1.0.0" },
+    "components": [
+      { "id": "state-feed", "label": "State Feed", "status": "HEALTHY", "message": null, "checkedAt": "2026-07-17T03:20:00Z" },
+      { "id": "audio-monitor", "label": "Audio Monitor", "status": "HEALTHY", "message": "Mix activity detected", "checkedAt": "2026-07-17T03:20:00Z" }
+    ],
+    "checkedAt": "2026-07-17T03:20:00Z"
+  }
+}

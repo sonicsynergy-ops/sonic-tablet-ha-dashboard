@@ -1,0 +1,140 @@
+{
+  "contractVersion": "1.0.0",
+  "fixtureId": "studio-state.break",
+  "generatedAt": "2026-07-17T04:00:00Z",
+  "origin": "MOCK",
+  "freshness": { "stale": false, "ageSeconds": 0, "expiresAfterSeconds": 30 },
+  "studio": { "id": "sonic-synergy-studio", "name": "Sonic Synergy Studio", "timezone": "America/Mexico_City" },
+  "mode": {
+    "value": "BREAK",
+    "label": "Break",
+    "changedAt": "2026-07-17T03:50:00Z",
+    "changedBy": "OPERATOR",
+    "pending": false
+  },
+  "broadcast": {
+    "status": "OFF_AIR",
+    "label": "Off Air",
+    "health": "NOMINAL",
+    "detail": "Broadcast paused for break",
+    "startedAt": null,
+    "elapsedSeconds": null,
+    "destinations": [
+      { "id": "primary-stream", "label": "Primary Stream", "status": "DISCONNECTED", "audience": null }
+    ],
+    "updatedAt": "2026-07-17T04:00:00Z"
+  },
+  "activity": [
+    {
+      "id": "activity-session-paused",
+      "zoneId": null,
+      "kind": "WORKFLOW",
+      "status": "PAUSED",
+      "title": "Session paused",
+      "detail": "Studio is on a scheduled break",
+      "startedAt": "2026-07-17T03:50:00Z",
+      "updatedAt": "2026-07-17T04:00:00Z"
+    },
+    {
+      "id": "activity-control-room-occupied",
+      "zoneId": "control-room",
+      "kind": "OCCUPANCY",
+      "status": "ACTIVE",
+      "title": "Operator present",
+      "detail": null,
+      "startedAt": "2026-07-17T03:58:00Z",
+      "updatedAt": "2026-07-17T04:00:00Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": "control-room",
+      "name": "Control Room",
+      "shortName": "Control",
+      "kind": "CONTROL_ROOM",
+      "status": "ACTIVE",
+      "summary": "Operator present; playback idle",
+      "occupancy": { "status": "OCCUPIED", "count": 1, "updatedAt": "2026-07-17T04:00:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "MONITORING", "CLIMATE"],
+      "metrics": [
+        { "id": "monitoring", "label": "Monitoring", "value": "Muted", "unit": null, "status": "NORMAL", "updatedAt": "2026-07-17T04:00:00Z" }
+      ],
+      "activeActivityIds": ["activity-control-room-occupied"],
+      "updatedAt": "2026-07-17T04:00:00Z"
+    },
+    {
+      "id": "live-room",
+      "name": "Live Room",
+      "shortName": "Live",
+      "kind": "LIVE_ROOM",
+      "status": "AVAILABLE",
+      "summary": "Clear during break",
+      "occupancy": { "status": "CLEAR", "count": 0, "updatedAt": "2026-07-17T04:00:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING", "CLIMATE"],
+      "metrics": [
+        { "id": "audio-signal", "label": "Audio Signal", "value": "Idle", "unit": null, "status": "NORMAL", "updatedAt": "2026-07-17T04:00:00Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T04:00:00Z"
+    },
+    {
+      "id": "vocal-booth",
+      "name": "Vocal Booth",
+      "shortName": "Booth",
+      "kind": "VOCAL_BOOTH",
+      "status": "AVAILABLE",
+      "summary": "Clear during break",
+      "occupancy": { "status": "CLEAR", "count": 0, "updatedAt": "2026-07-17T04:00:00Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING"],
+      "metrics": [
+        { "id": "mic-chain", "label": "Mic Chain", "value": "Standby", "unit": null, "status": "NORMAL", "updatedAt": "2026-07-17T04:00:00Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T04:00:00Z"
+    }
+  ],
+  "alerts": [],
+  "quickActions": [
+    {
+      "id": "action-resume-ready",
+      "actionId": "studio.mode.ready",
+      "label": "Resume Session",
+      "description": "Return the studio to ready mode",
+      "target": { "kind": "STUDIO" },
+      "availability": "AVAILABLE",
+      "presentation": "PRIMARY",
+      "confirmation": { "required": false, "prompt": null }
+    },
+    {
+      "id": "action-live-room-lights",
+      "actionId": "zone.lights.toggle",
+      "label": "Live Room Lights",
+      "description": "Toggle the live room lighting group",
+      "target": { "kind": "ZONE", "zoneId": "live-room" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": false, "prompt": null }
+    },
+    {
+      "id": "action-close-studio",
+      "actionId": "studio.scene.close",
+      "label": "Close Studio",
+      "description": "Run the approved studio close sequence",
+      "target": { "kind": "STUDIO" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": true, "prompt": "Run the studio close sequence?" }
+    }
+  ],
+  "systemHealth": {
+    "overall": "HEALTHY",
+    "provider": { "id": "mock", "label": "Local Mock Provider", "connection": "CONNECTED", "lastSyncAt": "2026-07-17T04:00:00Z", "latencyMs": 0, "message": null },
+    "tablet": { "batteryPercent": 64, "charging": false, "network": "ONLINE", "kioskMode": true },
+    "application": { "version": "0.0.0-contract", "build": "fixture-break", "contractVersion": "1.0.0" },
+    "components": [
+      { "id": "state-feed", "label": "State Feed", "status": "HEALTHY", "message": null, "checkedAt": "2026-07-17T04:00:00Z" },
+      { "id": "command-gateway", "label": "Command Gateway", "status": "HEALTHY", "message": "Mock commands available", "checkedAt": "2026-07-17T04:00:00Z" }
+    ],
+    "checkedAt": "2026-07-17T04:00:00Z"
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "contractVersion": "1.0.0",
+  "fixtureId": "studio-state.degraded",
+  "generatedAt": "2026-07-17T05:00:00Z",
+  "origin": "MOCK",
+  "freshness": { "stale": true, "ageSeconds": 94, "expiresAfterSeconds": 30 },
+  "studio": { "id": "sonic-synergy-studio", "name": "Sonic Synergy Studio", "timezone": "America/Mexico_City" },
+  "mode": {
+    "value": "READY",
+    "label": "Ready (Unverified)",
+    "changedAt": "2026-07-17T04:40:00Z",
+    "changedBy": "PROVIDER",
+    "pending": false
+  },
+  "broadcast": {
+    "status": "UNKNOWN",
+    "label": "Broadcast Unknown",
+    "health": "CRITICAL",
+    "detail": "Broadcast state has not refreshed",
+    "startedAt": null,
+    "elapsedSeconds": null,
+    "destinations": [
+      { "id": "primary-stream", "label": "Primary Stream", "status": "UNKNOWN", "audience": null }
+    ],
+    "updatedAt": "2026-07-17T04:58:26Z"
+  },
+  "activity": [
+    {
+      "id": "activity-state-feed-stale",
+      "zoneId": null,
+      "kind": "EQUIPMENT",
+      "status": "ERROR",
+      "title": "Studio state is stale",
+      "detail": "Provider updates are 94 seconds old",
+      "startedAt": "2026-07-17T04:59:00Z",
+      "updatedAt": "2026-07-17T05:00:00Z"
+    },
+    {
+      "id": "activity-control-room-unknown",
+      "zoneId": "control-room",
+      "kind": "OCCUPANCY",
+      "status": "UNKNOWN",
+      "title": "Control-room occupancy unknown",
+      "detail": "Last known state was occupied",
+      "startedAt": null,
+      "updatedAt": "2026-07-17T04:58:26Z"
+    }
+  ],
+  "zones": [
+    {
+      "id": "control-room",
+      "name": "Control Room",
+      "shortName": "Control",
+      "kind": "CONTROL_ROOM",
+      "status": "ATTENTION",
+      "summary": "State is stale; verify locally",
+      "occupancy": { "status": "UNKNOWN", "count": null, "updatedAt": "2026-07-17T04:58:26Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "MONITORING", "CLIMATE"],
+      "metrics": [
+        { "id": "monitoring", "label": "Monitoring", "value": null, "unit": null, "status": "UNKNOWN", "updatedAt": "2026-07-17T04:58:26Z" },
+        { "id": "temperature", "label": "Temperature", "value": 23.1, "unit": "°C", "status": "WARNING", "updatedAt": "2026-07-17T04:58:26Z" }
+      ],
+      "activeActivityIds": ["activity-control-room-unknown"],
+      "updatedAt": "2026-07-17T04:58:26Z"
+    },
+    {
+      "id": "live-room",
+      "name": "Live Room",
+      "shortName": "Live",
+      "kind": "LIVE_ROOM",
+      "status": "UNKNOWN",
+      "summary": "Current state unavailable",
+      "occupancy": { "status": "UNKNOWN", "count": null, "updatedAt": "2026-07-17T04:58:26Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING", "CLIMATE"],
+      "metrics": [
+        { "id": "audio-signal", "label": "Audio Signal", "value": null, "unit": null, "status": "UNKNOWN", "updatedAt": "2026-07-17T04:58:26Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T04:58:26Z"
+    },
+    {
+      "id": "vocal-booth",
+      "name": "Vocal Booth",
+      "shortName": "Booth",
+      "kind": "VOCAL_BOOTH",
+      "status": "OFFLINE",
+      "summary": "Zone data unavailable",
+      "occupancy": { "status": "UNKNOWN", "count": null, "updatedAt": "2026-07-17T04:57:40Z" },
+      "capabilities": ["OCCUPANCY", "LIGHTING", "AUDIO", "RECORDING"],
+      "metrics": [
+        { "id": "mic-chain", "label": "Mic Chain", "value": null, "unit": null, "status": "CRITICAL", "updatedAt": "2026-07-17T04:57:40Z" }
+      ],
+      "activeActivityIds": [],
+      "updatedAt": "2026-07-17T04:57:40Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-provider-stale",
+      "severity": "CRITICAL",
+      "status": "ACTIVE",
+      "title": "Studio data is stale",
+      "message": "Do not rely on remote state until the provider reconnects.",
+      "scope": { "kind": "SYSTEM", "id": "studio-provider" },
+      "acknowledgeable": true,
+      "createdAt": "2026-07-17T04:59:00Z",
+      "updatedAt": "2026-07-17T05:00:00Z",
+      "acknowledgedAt": null
+    },
+    {
+      "id": "alert-booth-offline",
+      "severity": "WARNING",
+      "status": "ACTIVE",
+      "title": "Vocal booth unavailable",
+      "message": "The vocal-booth status feed is offline.",
+      "scope": { "kind": "ZONE", "id": "vocal-booth" },
+      "acknowledgeable": true,
+      "createdAt": "2026-07-17T04:58:00Z",
+      "updatedAt": "2026-07-17T05:00:00Z",
+      "acknowledgedAt": null
+    }
+  ],
+  "quickActions": [
+    {
+      "id": "action-ready-unavailable",
+      "actionId": "studio.mode.ready",
+      "label": "Mark Ready",
+      "description": "Unavailable while provider state is stale",
+      "target": { "kind": "STUDIO" },
+      "availability": "UNAVAILABLE",
+      "presentation": "PRIMARY",
+      "confirmation": { "required": false, "prompt": null }
+    },
+    {
+      "id": "action-broadcast-unavailable",
+      "actionId": "broadcast.start",
+      "label": "Go Live",
+      "description": "Unavailable until broadcast state is verified",
+      "target": { "kind": "BROADCAST" },
+      "availability": "UNAVAILABLE",
+      "presentation": "DANGER",
+      "confirmation": { "required": true, "prompt": "Start the broadcast?" }
+    },
+    {
+      "id": "action-ack-provider",
+      "actionId": "alert.acknowledge",
+      "label": "Acknowledge Alert",
+      "description": "Acknowledge the stale-provider warning locally",
+      "target": { "kind": "ALERT", "alertId": "alert-provider-stale" },
+      "availability": "AVAILABLE",
+      "presentation": "SECONDARY",
+      "confirmation": { "required": false, "prompt": null }
+    }
+  ],
+  "systemHealth": {
+    "overall": "DEGRADED",
+    "provider": {
+      "id": "mock-degraded",
+      "label": "Degraded Mock Provider",
+      "connection": "STALE",
+      "lastSyncAt": "2026-07-17T04:58:26Z",
+      "latencyMs": null,
+      "message": "No state update received within the freshness window"
+    },
+    "tablet": { "batteryPercent": 19, "charging": false, "network": "LIMITED", "kioskMode": true },
+    "application": { "version": "0.0.0-contract", "build": "fixture-degraded", "contractVersion": "1.0.0" },
+    "components": [
+      { "id": "state-feed", "label": "State Feed", "status": "DEGRADED", "message": "State is 94 seconds old", "checkedAt": "2026-07-17T05:00:00Z" },
+      { "id": "command-gateway", "label": "Command Gateway", "status": "OFFLINE", "message": "Remote actions disabled", "checkedAt": "2026-07-17T05:00:00Z" },
+      { "id": "broadcast-monitor", "label": "Broadcast Monitor", "status": "UNKNOWN", "message": "Broadcast state unavailable", "checkedAt": "2026-07-17T05:00:00Z" }
+    ],
+    "checkedAt": "2026-07-17T05:00:00Z"
+  }
+}

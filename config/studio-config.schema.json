@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sonicsynergy.studio/schemas/studio-config.schema.json",
+  "title": "Sonic Studio Dashboard Configuration",
+  "description": "Provider-neutral product configuration for the Sonic studio tablet dashboard.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract_version",
+    "studio",
+    "floorplan",
+    "zones",
+    "quick_actions",
+    "admin"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "contract_version": { "const": "1.0.0" },
+    "studio": { "$ref": "#/$defs/studio" },
+    "floorplan": { "$ref": "#/$defs/floorplan" },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/zone" }
+    },
+    "quick_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/quickAction" }
+    },
+    "admin": { "$ref": "#/$defs/admin" }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "studio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "timezone", "default_mode"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string", "minLength": 1 },
+        "timezone": { "type": "string", "minLength": 1 },
+        "default_mode": { "$ref": "#/$defs/studioMode" }
+      }
+    },
+    "studioMode": {
+      "enum": ["READY", "RECORDING", "MIXING", "BREAK"]
+    },
+    "floorplan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset", "width", "height"],
+      "properties": {
+        "asset": { "type": "string", "minLength": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "zoneKind": {
+      "enum": [
+        "CONTROL_ROOM",
+        "LIVE_ROOM",
+        "VOCAL_BOOTH",
+        "MACHINE_ROOM",
+        "COMMON_AREA",
+        "OTHER"
+      ]
+    },
+    "zoneCapability": {
+      "enum": [
+        "OCCUPANCY",
+        "LIGHTING",
+        "AUDIO",
+        "RECORDING",
+        "MONITORING",
+        "CLIMATE"
+      ]
+    },
+    "floorplanRegion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0 },
+        "y": { "type": "number", "minimum": 0 },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "short_name",
+        "kind",
+        "capabilities",
+        "floorplan"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "name": { "type": "string", "minLength": 1 },
+        "short_name": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/$defs/zoneKind" },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/zoneCapability" }
+        },
+        "floorplan": { "$ref": "#/$defs/floorplanRegion" }
+      }
+    },
+    "applicationActionId": {
+      "enum": [
+        "studio.mode.ready",
+        "studio.mode.recording",
+        "studio.mode.mixing",
+        "studio.mode.break",
+        "studio.scene.open",
+        "studio.scene.close",
+        "broadcast.start",
+        "broadcast.stop",
+        "zone.lights.toggle",
+        "zone.audio.mute-toggle",
+        "alert.acknowledge"
+      ]
+    },
+    "actionTarget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "STUDIO" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "BROADCAST" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "zone_id"],
+          "properties": {
+            "kind": { "const": "ZONE" },
+            "zone_id": { "$ref": "#/$defs/identifier" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "alert_id"],
+          "properties": {
+            "kind": { "const": "ALERT" },
+            "alert_id": { "$ref": "#/$defs/identifier" }
+          }
+        }
+      ]
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": { "type": "boolean" },
+        "prompt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "quickAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "action_id",
+        "label",
+        "description",
+        "target",
+        "confirmation"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "action_id": { "$ref": "#/$defs/applicationActionId" },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/actionTarget" },
+        "confirmation": { "$ref": "#/$defs/confirmation" }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hidden_from_navigation",
+        "entry_gesture",
+        "show_provider_health",
+        "show_mapping_health"
+      ],
+      "properties": {
+        "hidden_from_navigation": { "const": true },
+        "entry_gesture": { "enum": ["LONG_PRESS"] },
+        "show_provider_health": { "type": "boolean" },
+        "show_mapping_health": { "type": "boolean" }
+      }
+    }
+  }
+}

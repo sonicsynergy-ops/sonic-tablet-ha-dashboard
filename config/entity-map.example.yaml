@@ -1,0 +1,92 @@
+# Provider-only example. The tablet UI consumes application-owned signal and
+# action IDs; it never consumes the external identifiers in this file directly.
+schema_version: 1
+provider:
+  id: studio-provider
+  kind: home-assistant
+  label: Studio State Provider
+
+state_mappings:
+  studio.mode.current:
+    entity_id: input_select.sonic_studio_mode
+    decode:
+      kind: ENUM
+      values:
+        ready: READY
+        recording: RECORDING
+        mixing: MIXING
+        break: BREAK
+
+  studio.broadcast.status:
+    entity_id: input_select.sonic_broadcast_status
+    decode:
+      kind: ENUM
+      values:
+        off_air: OFF_AIR
+        standby: STANDBY
+        live: LIVE
+        interrupted: INTERRUPTED
+
+  zone.control-room.occupancy:
+    entity_id: binary_sensor.sonic_control_room_occupancy
+    decode:
+      kind: BOOLEAN_STATUS
+      true_value: OCCUPIED
+      false_value: CLEAR
+
+  zone.control-room.temperature:
+    entity_id: sensor.sonic_control_room_temperature
+    decode:
+      kind: NUMBER
+      unit: "°C"
+
+  zone.live-room.occupancy:
+    entity_id: binary_sensor.sonic_live_room_occupancy
+    decode:
+      kind: BOOLEAN_STATUS
+      true_value: OCCUPIED
+      false_value: CLEAR
+
+  zone.vocal-booth.occupancy:
+    entity_id: binary_sensor.sonic_vocal_booth_occupancy
+    decode:
+      kind: BOOLEAN_STATUS
+      true_value: OCCUPIED
+      false_value: CLEAR
+
+action_mappings:
+  studio.mode.ready:
+    entity_id: script.sonic_studio_mode_ready
+    adapter_operation: ACTIVATE
+
+  studio.mode.recording:
+    entity_id: script.sonic_studio_mode_recording
+    adapter_operation: ACTIVATE
+
+  studio.mode.mixing:
+    entity_id: script.sonic_studio_mode_mixing
+    adapter_operation: ACTIVATE
+
+  studio.mode.break:
+    entity_id: script.sonic_studio_mode_break
+    adapter_operation: ACTIVATE
+
+  broadcast.start:
+    entity_id: script.sonic_broadcast_start
+    adapter_operation: ACTIVATE
+
+  broadcast.stop:
+    entity_id: script.sonic_broadcast_stop
+    adapter_operation: ACTIVATE
+
+  zone.lights.toggle:
+    entity_id: light.sonic_live_room
+    adapter_operation: TOGGLE
+    allowed_targets:
+      - live-room
+
+  zone.audio.mute-toggle:
+    entity_id: switch.sonic_control_room_monitor_mute
+    adapter_operation: TOGGLE
+    allowed_targets:
+      - control-room
